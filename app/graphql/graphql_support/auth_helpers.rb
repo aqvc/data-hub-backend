@@ -1,0 +1,44 @@
+module GraphqlSupport
+  module AuthHelpers
+    ALL_ROLES = %w[Admin DataManager AccountManager].freeze
+    ADMIN_ROLE = "Admin".freeze
+
+    private
+
+    def current_user
+      controller.current_user
+    end
+
+    def current_user_id
+      current_user&.id
+    end
+
+    def session_roles
+      controller.session[:current_user_roles].presence || current_user&.roles&.pluck(:name) || []
+    end
+
+    def authorize_roles!(*allowed_roles)
+      if current_user.nil?
+        raise_execution_error(
+          code: "Auth.MissingSession",
+          detail: "No active session.",
+          status: 401,
+          type: "https://tools.ietf.org/html/rfc7235#section-3.1"
+        )
+      end
+
+      return true if (session_roles & allowed_roles).any?
+
+      raise_execution_error(
+        code: "Auth.Forbidden",
+        detail: "You are not authorized to perform this action.",
+        status: 403,
+        type: "https://tools.ietf.org/html/rfc7231#section-6.5.3"
+      )
+    end
+
+    def controller
+      context[:controller]
+    end
+  end
+end

@@ -1,0 +1,36 @@
+#!/usr/bin/env ruby
+APP_ROOT = File.expand_path("..", __dir__)
+
+def system!(*args)
+  system(*args) || abort("\n== Command #{args.join(' ')} failed ==")
+end
+
+Dir.chdir(APP_ROOT) do
+  puts "== Installing dependencies =="
+  system("bundle check") || system!("bundle", "install")
+
+  puts "\n== Ensuring database exists =="
+  system!("bin/rails", "db:create")
+
+  puts "\n== Checking if core schema exists =="
+  schema_present = system(
+    "bin/rails",
+    "runner",
+    "exit(ActiveRecord::Base.connection.data_source_exists?('investors') ? 0 : 1)"
+  )
+
+  if schema_present
+    puts "Schema already present (investors table found)."
+  else
+    puts "Schema missing. Loading db/schema.rb..."
+    system!("bin/rails", "db:schema:load")
+  end
+
+  puts "\n== Running migrations =="
+  system!("bin/rails", "db:migrate")
+
+  puts "\n== Seeding auth users/roles =="
+  system!("bin/rails", "db:seed_auth")
+
+  puts "\n== Bootstrap complete =="
+end

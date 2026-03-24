@@ -1,0 +1,12 @@
+#!/usr/bin/env ruby
+APP_ROOT = File.expand_path("..", __dir__)
+
+def system!(*args)
+  system(*args) || abort("\n== Command #{args.join(' ')} failed ==")
+end
+
+Dir.chdir(APP_ROOT) do
+  puts "== Seeding auth users/roles =="
+  system!("bin/rails", "runner", "load Rails.root.join('db/seeds.rb')")
+  puts "== Done =="
+end
