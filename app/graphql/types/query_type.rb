@@ -184,7 +184,27 @@ module Types
                  else
                    InvestmentEntity.where(investment_vehicle_id: vehicle_ids).order(created_at_utc: :desc, id: :asc)
                  end
-      { "data" => entities.map { |entity| serialize_record(entity) } }
+      {
+        "data" => entities.map do |entity|
+          payload = serialize_record(entity)
+          headquarters_address = entity.headquarters_address || Location.find_by(id: entity.headquarters_address_id)
+          payload["headquartersAddress"] = if headquarters_address.nil?
+                                             nil
+                                           else
+                                             deep_camelize(
+                                               id: headquarters_address.id,
+                                               country_id: headquarters_address.country_id,
+                                               city: headquarters_address.city,
+                                               address_line1: headquarters_address.address_line1,
+                                               country: {
+                                                 id: headquarters_address.country&.id,
+                                                 name: headquarters_address.country&.name
+                                               }
+                                             )
+                                           end
+          payload
+        end
+      }
     end
 
     def regions

@@ -42,5 +42,10 @@ class InvestmentVehicle < ApplicationRecord
     american_waterfall: "american_waterfall",
     european_waterfall: "european_waterfall"
   }
+  enum :jurisdiction, {
+    kyc: 0,
+    aml: 1,
+    audit_approved: 2
+  }
 
 end

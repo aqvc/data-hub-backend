@@ -1,3 +1,5 @@
+require "securerandom"
+
 module Mutations
   class CreateInvestmentStrategy < Mutations::BaseMutation
     argument :investor_id, ID, required: true
@@ -12,6 +14,7 @@ module Mutations
       raise_not_found("Investors.NotFound", investor_id, "investor") if investor.nil?
 
       strategy = InvestmentStrategy.new(
+        id: SecureRandom.uuid,
         investor_id: investor.id,
         name: name.presence || "",
         created_by_id: current_user_id,

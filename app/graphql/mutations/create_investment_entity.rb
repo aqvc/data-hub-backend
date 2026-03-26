@@ -1,3 +1,5 @@
+require "securerandom"
+
 module Mutations
   class CreateInvestmentEntity < Mutations::BaseMutation
     argument :investor_id, ID, required: false
@@ -20,6 +22,7 @@ module Mutations
       raise_not_found("InvestmentVehicles.NotFound", vehicle_id, "investment vehicle") if vehicle.nil?
 
       entity = InvestmentEntity.new(
+        id: SecureRandom.uuid,
         investment_vehicle_id: vehicle.id,
         created_by_id: current_user_id,
         created_at_utc: Time.now.utc
