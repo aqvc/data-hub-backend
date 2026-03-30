@@ -1,5 +1,3 @@
-require "securerandom"
-
 class ProofLedgerPersistenceService
   def self.persist_from_payload!(proof_points:, current_user_id:, fallback_relation: {})
     return if proof_points.blank?
@@ -12,8 +10,7 @@ class ProofLedgerPersistenceService
 
       next if attrs["field_id"].blank? || attrs["proof_type"].blank?
 
-      ProofLedger.create!(
-        id: attrs["id"].presence || SecureRandom.uuid,
+      proof_ledger_attrs = {
         investor_id: attrs["investor_id"],
         investment_vehicle_id: attrs["investment_vehicle_id"],
         investment_strategy_id: attrs["investment_strategy_id"],
@@ -37,7 +34,10 @@ class ProofLedgerPersistenceService
         rational: attrs["rational"],
         created_by_id: current_user_id,
         created_at_utc: Time.now.utc
-      )
+      }
+      proof_ledger_attrs[:id] = attrs["id"] if attrs["id"].present?
+
+      ProofLedger.create!(proof_ledger_attrs)
     end
   end
 

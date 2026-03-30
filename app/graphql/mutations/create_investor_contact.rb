@@ -1,5 +1,3 @@
-require "securerandom"
-
 module Mutations
   class CreateInvestorContact < Mutations::BaseMutation
     argument :investor_id, ID, required: true
@@ -13,7 +11,6 @@ module Mutations
       raise_not_found("Investors.NotFound", investor_id, "investor") if investor.nil?
 
       contact = InvestorContact.new(
-        id: SecureRandom.uuid,
         investor_id: investor.id,
         created_by_id: current_user_id,
         created_at_utc: Time.now.utc

@@ -1,5 +1,3 @@
-require "securerandom"
-
 module Mutations
   class CreateInvestmentVehicle < Mutations::BaseMutation
     argument :investor_id, ID, required: true
@@ -14,7 +12,6 @@ module Mutations
       raise_not_found("Investors.NotFound", investor_id, "investor") if investor.nil?
 
       vehicle = InvestmentVehicle.new(
-        id: SecureRandom.uuid,
         investor_id: investor.id,
         name: name.presence || "",
         created_by_id: current_user_id,

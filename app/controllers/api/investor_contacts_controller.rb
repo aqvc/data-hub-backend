@@ -1,7 +1,6 @@
 module Api
   class InvestorContactsController < ApplicationController
     include JwtAuthentication
-    require "securerandom"
 
     ALL_ROLES = %w[Admin DataManager AccountManager].freeze
 
