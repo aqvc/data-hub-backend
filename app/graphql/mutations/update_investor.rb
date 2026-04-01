@@ -1,5 +1,3 @@
-require "securerandom"
-
 module Mutations
   class UpdateInvestor < Mutations::BaseMutation
     argument :id, ID, required: true
@@ -67,7 +65,6 @@ module Mutations
         return if normalized_country_id.blank?
 
         location = Location.create!(
-          id: SecureRandom.uuid,
           country_id: normalized_country_id,
           city: normalized_city,
           address_line1: normalized_address_line1,
