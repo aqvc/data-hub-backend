@@ -3,10 +3,10 @@ module GraphqlApi
     include GraphqlSupport::PayloadHelpers
 
     def search(page:, limit:, filter:, column_filter:, sort:)
+
       page_number = [page.to_i, 1].max
       per_page = limit.to_i.positive? ? limit.to_i : 10
       per_page = [per_page, 100].min
-
       filtered = filtered_scope(base_scope, filter: filter, column_filter: column_filter)
       filtered_ids = filtered.except(:order).reselect("public.investors.id").distinct
 
@@ -48,6 +48,7 @@ module GraphqlApi
 
     def filtered_scope(scope, filter:, column_filter:)
       investors = apply_name_filter(scope, input_value(column_filter, :name).to_s.strip)
+      investors = scope
       investors = apply_column_filters(investors, column_filter)
       investors = apply_advanced_filters(investors, filter)
       investors.distinct
@@ -81,12 +82,10 @@ module GraphqlApi
     end
 
     def apply_advanced_filters(scope, filter)
-      join_operator = input_value(filter, :joinOperator).to_s.downcase == "or" ? "or" : "and"
-      filters = normalize_grouped_filters(input_value(filter, :filterList))
-      ids = matching_investor_ids(filters, join_operator)
-      return scope if ids.nil?
-
-      scope.where(id: ids)
+      join_operator = input_value(filter, :joinOperator).to_s.downcase
+      filter_list   = input_value(filter, :filterList)
+      builder       = InvestorQueryBuilder.from_filter(filter_list, join_operator: join_operator)
+      builder.build(scope)
     end
 
     def normalize_column_filters(column_filter)
@@ -356,22 +355,7 @@ module GraphqlApi
     end
 
     def base_scope
-      Investor.preload(
-        :investor_contacts,
-        investment_strategies: [
-          { investment_strategy_region_focuses: :region },
-          { investment_strategy_country_focuses: :country }
-        ],
-        location: { country: :region },
-        investment_vehicles: {
-          investment_vehicle_investment_strategies: {
-            investment_strategy: [
-              { investment_strategy_region_focuses: :region },
-              { investment_strategy_country_focuses: :country }
-            ]
-          }
-        }
-      )
+      Investor.all
     end
 
     def base_export_scope
