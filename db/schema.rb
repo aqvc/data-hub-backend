@@ -10,9 +10,10 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_03_30_000056) do
+ActiveRecord::Schema[7.0].define(version: 2026_03_30_000057) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "hstore"
+  enable_extension "pg_trgm"
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
 
@@ -896,17 +897,18 @@ ActiveRecord::Schema[7.0].define(version: 2026_03_30_000056) do
     t.timestamptz "updated_at_utc", default: -> { "CURRENT_TIMESTAMP" }
   end
 
-  create_table "role_claims", id: :serial, force: :cascade do |t|
-    t.string "role_id", null: false
+  create_table "role_claims", id: :integer, default: nil, force: :cascade do |t|
+    t.uuid "role_id", null: false
     t.text "claim_type"
     t.text "claim_value"
+    t.index ["role_id"], name: "ix_role_claims_role_id"
   end
 
   create_table "roles", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
-    t.string "name"
-    t.string "normalized_name"
+    t.string "name", limit: 256
+    t.string "normalized_name", limit: 256
     t.text "concurrency_stamp"
-    t.index ["normalized_name"], name: "index_roles_on_normalized_name", unique: true
+    t.index ["normalized_name"], name: "RoleNameIndex", unique: true
   end
 
   create_table "similar_fund_and_company_iips", primary_key: ["similar_fund_and_company_id", "ideal_investor_profile_id"], force: :cascade do |t|
@@ -932,10 +934,11 @@ ActiveRecord::Schema[7.0].define(version: 2026_03_30_000056) do
     t.uuid "updated_by_id"
   end
 
-  create_table "user_claims", id: :serial, force: :cascade do |t|
-    t.string "user_id", null: false
+  create_table "user_claims", id: :integer, default: nil, force: :cascade do |t|
+    t.uuid "user_id", null: false
     t.text "claim_type"
     t.text "claim_value"
+    t.index ["user_id"], name: "ix_user_claims_user_id"
   end
 
   create_table "user_details_hub", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -949,27 +952,30 @@ ActiveRecord::Schema[7.0].define(version: 2026_03_30_000056) do
     t.index ["updated_by_id"], name: "ix_user_details_hub_updated_by_id"
   end
 
-  create_table "user_logins", id: false, force: :cascade do |t|
+  create_table "user_logins", primary_key: ["login_provider", "provider_key"], force: :cascade do |t|
     t.text "login_provider", null: false
     t.text "provider_key", null: false
     t.text "provider_display_name"
-    t.string "user_id", null: false
+    t.uuid "user_id", null: false
+    t.index ["user_id"], name: "ix_user_logins_user_id"
   end
 
   create_table "user_refresh_tokens", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
-    t.string "token", null: false
+    t.string "token", limit: 200, null: false
     t.uuid "user_id", null: false
-    t.datetime "expires_on_utc", null: false
-    t.index ["token"], name: "index_user_refresh_tokens_on_token", unique: true
+    t.timestamptz "expires_on_utc", null: false
+    t.index ["token"], name: "ix_user_refresh_tokens_token", unique: true
+    t.index ["user_id"], name: "ix_user_refresh_tokens_user_id"
   end
 
-  create_table "user_roles", id: false, force: :cascade do |t|
+  create_table "user_roles", primary_key: ["user_id", "role_id"], force: :cascade do |t|
     t.uuid "user_id", null: false
     t.uuid "role_id", null: false
+    t.index ["role_id"], name: "ix_user_roles_role_id"
   end
 
-  create_table "user_tokens", id: false, force: :cascade do |t|
-    t.string "user_id", null: false
+  create_table "user_tokens", primary_key: ["user_id", "login_provider", "name"], force: :cascade do |t|
+    t.uuid "user_id", null: false
     t.text "login_provider", null: false
     t.text "name", null: false
     t.text "value"
@@ -991,12 +997,13 @@ ActiveRecord::Schema[7.0].define(version: 2026_03_30_000056) do
     t.text "phone_number"
     t.boolean "phone_number_confirmed", null: false
     t.boolean "two_factor_enabled", null: false
-    t.datetime "lockout_end"
+    t.timestamptz "lockout_end"
     t.boolean "lockout_enabled", null: false
     t.integer "access_failed_count", null: false
-    t.string "encrypted_password", default: "", null: false
-    t.index ["email"], name: "index_users_on_email", unique: true
-    t.index ["normalized_email"], name: "index_users_on_normalized_email", unique: true
+    t.index ["created_by_id"], name: "ix_users_created_by_id"
+    t.index ["normalized_email"], name: "EmailIndex"
+    t.index ["normalized_user_name"], name: "UserNameIndex", unique: true
+    t.index ["updated_by_id"], name: "ix_users_updated_by_id"
   end
 
   add_foreign_key "activities", "auth_hub.users", column: "created_by_id", name: "fk_activities_users_created_by_id", on_delete: :restrict

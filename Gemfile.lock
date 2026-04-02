@@ -81,6 +81,7 @@ GEM
     bootsnap (1.23.0)
       msgpack (~> 1.2)
     builder (3.3.0)
+    byebug (12.0.0)
     cgi (0.5.1)
     concurrent-ruby (1.3.6)
     crass (1.0.6)
@@ -219,6 +220,7 @@ PLATFORMS
 
 DEPENDENCIES
   bootsnap
+  byebug
   debug
   devise (~> 4.9)
   graphql (~> 2.3.4)

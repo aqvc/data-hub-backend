@@ -3,10 +3,10 @@ module GraphqlApi
     include GraphqlSupport::PayloadHelpers
 
     def search(page:, limit:, filter:, column_filter:, sort:)
+
       page_number = [page.to_i, 1].max
       per_page = limit.to_i.positive? ? limit.to_i : 10
       per_page = [per_page, 100].min
-
       filtered = filtered_scope(base_scope, filter: filter, column_filter: column_filter)
       filtered_ids = filtered.except(:order).reselect("public.investors.id").distinct
 
@@ -81,12 +81,10 @@ module GraphqlApi
     end
 
     def apply_advanced_filters(scope, filter)
-      join_operator = input_value(filter, :joinOperator).to_s.downcase == "or" ? "or" : "and"
-      filters = normalize_grouped_filters(input_value(filter, :filterList))
-      ids = matching_investor_ids(filters, join_operator)
-      return scope if ids.nil?
-
-      scope.where(id: ids)
+      join_operator = input_value(filter, :joinOperator).to_s.downcase
+      filter_list   = input_value(filter, :filterList)
+      builder       = InvestorQueryBuilder.from_filter(filter_list, join_operator: join_operator)
+      builder.build(scope)
     end
 
     def normalize_column_filters(column_filter)
@@ -140,6 +138,7 @@ module GraphqlApi
       id = filter_hash["id"].to_s
       operator = filter_hash["operator"].presence || "eq"
       values = normalize_values(filter_hash["value"])
+      values = normalize_filter_values(id, values)
 
       return nil if id.blank?
       return nil if values.empty? && !%w[isEmpty isNotEmpty].include?(operator)
@@ -149,6 +148,34 @@ module GraphqlApi
         operator: operator,
         values: values
       }
+    end
+
+    def normalize_filter_values(filter_id, values)
+      enum_filter_ids = %w[
+        investorType
+        assetClassFocus
+        sectorInvestmentFocus
+        maturityFocus
+        investorTypeFocus
+        stageFocus
+      ]
+
+      return values unless enum_filter_ids.include?(filter_id)
+
+      values.map { |value| normalize_enum_like_value(value) }
+    end
+
+    def normalize_enum_like_value(value)
+      return value unless value.is_a?(String)
+
+      value
+        .strip
+        .gsub("::", "/")
+        .gsub(/([A-Z]+)([A-Z][a-z])/, '\1_\2')
+        .gsub(/([a-z\d])([A-Z])/, '\1_\2')
+        .gsub(/[-\s]/, "_")
+        .gsub(/[^a-zA-Z0-9_]/, "_")
+        .downcase
     end
 
     def filter_scope(filter)
@@ -174,19 +201,19 @@ module GraphqlApi
         apply_scalar_filter(scope, "public.regions.id", filter)
       when "assetClassFocus"
         scope = strategy_filter_scope
-        apply_array_filter(scope, "public.investment_strategies.asset_class_focus", filter)
+        apply_array_filter(scope, "public.investment_strategies.asset_class_focus", filter, value_sql_type: "asset_class")
       when "sectorInvestmentFocus"
         scope = strategy_filter_scope
-        apply_array_filter(scope, "public.investment_strategies.sector_investment_focus", filter)
+        apply_array_filter(scope, "public.investment_strategies.sector_investment_focus", filter, value_sql_type: "sector")
       when "maturityFocus"
         scope = strategy_filter_scope
-        apply_array_filter(scope, "public.investment_strategies.maturity_focus", filter)
+        apply_array_filter(scope, "public.investment_strategies.maturity_focus", filter, value_sql_type: "maturity")
       when "investorTypeFocus"
         scope = strategy_filter_scope
-        apply_array_filter(scope, "public.investment_strategies.investor_type_focus", filter)
+        apply_array_filter(scope, "public.investment_strategies.investor_type_focus", filter, value_sql_type: "investor_type")
       when "stageFocus"
         scope = strategy_filter_scope
-        apply_array_filter(scope, "public.investment_strategies.stage_focus", filter)
+        apply_array_filter(scope, "public.investment_strategies.stage_focus", filter, value_sql_type: "stage")
       when "regionInvestmentFocus"
         scope = strategy_filter_scope.joins(
           "LEFT JOIN public.investment_strategy_region_focus ON public.investment_strategy_region_focus.investment_strategy_id::text = public.investment_strategies.id::text"
@@ -217,9 +244,9 @@ module GraphqlApi
       when "ne"
         scope.where("#{column} IS NULL OR #{column} <> ?", values.first)
       when "iLike"
-        scope.where("LOWER(COALESCE(#{column}, '')) LIKE ?", "%#{values.first.downcase}%")
+        scope.where("LOWER(#{column}) LIKE ?", "%#{values.first.downcase}%")
       when "notILike"
-        scope.where("LOWER(COALESCE(#{column}, '')) NOT LIKE ?", "%#{values.first.downcase}%")
+        scope.where("#{column} IS NULL OR LOWER(#{column}) NOT LIKE ?", "%#{values.first.downcase}%")
       when "inArray"
         scope.where("#{column} IN (?)", values)
       when "notInArray"
@@ -256,7 +283,7 @@ module GraphqlApi
       end
     end
 
-    def apply_array_filter(scope, column, filter)
+    def apply_array_filter(scope, column, filter, value_sql_type: "varchar")
       values = filter[:values]
       normalized_values = normalize_filter_tokens(values)
 
@@ -356,41 +383,11 @@ module GraphqlApi
     end
 
     def base_scope
-      Investor.preload(
-        :investor_contacts,
-        investment_strategies: [
-          { investment_strategy_region_focuses: :region },
-          { investment_strategy_country_focuses: :country }
-        ],
-        location: { country: :region },
-        investment_vehicles: {
-          investment_vehicle_investment_strategies: {
-            investment_strategy: [
-              { investment_strategy_region_focuses: :region },
-              { investment_strategy_country_focuses: :country }
-            ]
-          }
-        }
-      )
+      Investor.all
     end
 
     def base_export_scope
-      Investor.preload(
-        :investor_contacts,
-        investment_strategies: [
-          { investment_strategy_region_focuses: :region },
-          { investment_strategy_country_focuses: :country }
-        ],
-        location: { country: :region },
-        investment_vehicles: {
-          investment_vehicle_investment_strategies: {
-            investment_strategy: [
-              { investment_strategy_region_focuses: :region },
-              { investment_strategy_country_focuses: :country }
-            ]
-          }
-        }
-      )
+      Investor.all
     end
 
     def order_sql(sort_items)
