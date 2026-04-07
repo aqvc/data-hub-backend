@@ -11,6 +11,7 @@ gem "pg", "~> 1.5"
 gem "jwt", "~> 2.8"
 gem "devise", "~> 4.9"
 gem "graphql", "~> 2.3.4"
+gem "roo", "~> 2.10"
 
 # Use the Puma web server [https://github.com/puma/puma]
 gem "puma", "~> 5.0"

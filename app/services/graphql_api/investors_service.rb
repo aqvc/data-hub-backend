@@ -58,12 +58,15 @@ module GraphqlApi
 
       term = "%#{name_filter.downcase}%"
       scope
-        .left_outer_joins(:investment_vehicles)
-        .left_outer_joins(investment_vehicles: :investment_vehicle_investment_strategies)
-        .left_outer_joins(
-          investment_vehicles: {
-            investment_vehicle_investment_strategies: :investment_strategy
-          }
+        .joins(
+          <<~SQL.squish
+            LEFT JOIN public.investment_vehicles
+              ON public.investment_vehicles.investor_id = public.investors.id::text
+            LEFT JOIN public.investment_vehicles_investment_strategies
+              ON public.investment_vehicles_investment_strategies.investment_vehicle_id::text = public.investment_vehicles.id::text
+            LEFT JOIN public.investment_strategies
+              ON public.investment_strategies.id::text = public.investment_vehicles_investment_strategies.investment_strategy_id::text
+          SQL
         )
         .where(
           "LOWER(public.investors.name) LIKE :term OR LOWER(public.investment_vehicles.name) LIKE :term OR LOWER(public.investment_strategies.name) LIKE :term",
@@ -411,6 +414,7 @@ module GraphqlApi
         when "investorType" then "public.investors.type"
         when "updatedAtUtc" then "public.investors.updated_at_utc"
         when "qualified" then "public.investors.qualified"
+        when "source" then "public.investors.source"
         when "headquarterCity"
           "(SELECT l.city FROM public.locations l WHERE l.id::text = public.investors.location_id::text LIMIT 1)"
         when "headquarterCountry"
@@ -508,6 +512,7 @@ module GraphqlApi
         type: investor.type,
         updated_at_utc: investor.updated_at_utc,
         qualified: investor.qualified,
+        source: investor.qualified ? nil : investor.source,
         contacts_count: investor.investor_contacts.size,
         location: serialize_location(investor.location),
         investment_vehicles: investor.investment_vehicles.map do |vehicle|
@@ -542,11 +547,11 @@ module GraphqlApi
       {
         id: strategy.id,
         name: strategy.name,
-        asset_class_focus: strategy.asset_class_focus || [],
-        sector_investment_focus: strategy.sector_investment_focus || [],
-        maturity_focus: strategy.maturity_focus || [],
-        stage_focus: strategy.stage_focus || [],
-        investor_type_focus: strategy.investor_type_focus || [],
+        asset_class_focus: normalize_array_value(strategy.asset_class_focus),
+        sector_investment_focus: normalize_array_value(strategy.sector_investment_focus),
+        maturity_focus: normalize_array_value(strategy.maturity_focus),
+        stage_focus: normalize_array_value(strategy.stage_focus),
+        investor_type_focus: normalize_array_value(strategy.investor_type_focus),
         region_investment_focus: strategy.investment_strategy_region_focuses.map { |focus| focus.region&.name }.compact,
         country_investment_focus: strategy.investment_strategy_country_focuses.map { |focus| focus.country&.name }.compact
       }
@@ -598,18 +603,19 @@ module GraphqlApi
       when "headquarterCountry" then investor.location&.country&.name
       when "headquarterCity" then investor.location&.city
       when "updatedAtUtc" then investor.updated_at_utc
-      when "assetClassFocus" then strategies.flat_map { |strategy| Array(strategy.asset_class_focus) }.uniq.join(", ")
-      when "sectorInvestmentFocus" then strategies.flat_map { |strategy| Array(strategy.sector_investment_focus) }.uniq.join(", ")
+      when "assetClassFocus" then strategies.flat_map { |strategy| normalize_array_value(strategy.asset_class_focus) }.uniq.join(", ")
+      when "sectorInvestmentFocus" then strategies.flat_map { |strategy| normalize_array_value(strategy.sector_investment_focus) }.uniq.join(", ")
       when "regionInvestmentFocus" then strategies.flat_map { |strategy| strategy.investment_strategy_region_focuses.map { |focus| focus.region&.name } }.compact.uniq.join(", ")
       when "countryInvestmentFocus" then strategies.flat_map { |strategy| strategy.investment_strategy_country_focuses.map { |focus| focus.country&.name } }.compact.uniq.join(", ")
-      when "maturityFocus" then strategies.flat_map { |strategy| Array(strategy.maturity_focus) }.uniq.join(", ")
-      when "investorTypeFocus" then strategies.flat_map { |strategy| Array(strategy.investor_type_focus) }.uniq.join(", ")
-      when "stageFocus" then strategies.flat_map { |strategy| Array(strategy.stage_focus) }.uniq.join(", ")
+      when "maturityFocus" then strategies.flat_map { |strategy| normalize_array_value(strategy.maturity_focus) }.uniq.join(", ")
+      when "investorTypeFocus" then strategies.flat_map { |strategy| normalize_array_value(strategy.investor_type_focus) }.uniq.join(", ")
+      when "stageFocus" then strategies.flat_map { |strategy| normalize_array_value(strategy.stage_focus) }.uniq.join(", ")
       when "numberOfContacts" then investor.investor_contacts.size
       when "saturation" then nil
       when "investmentVehiclesCount" then investor.investment_vehicles.size
       when "investmentVehicleNames" then investor.investment_vehicles.map(&:name).compact.join(", ")
       when "qualified" then investor.qualified
+      when "source" then investor.qualified ? nil : investor.source
       when "organization" then investor.respond_to?(:organization_profile_id) ? investor.organization_profile_id : nil
       when "iip" then nil
       else
@@ -630,6 +636,21 @@ module GraphqlApi
       from_investor = Array(investor.investment_strategies)
 
       (from_vehicles + from_investor).compact.uniq(&:id)
+    end
+
+    # PostgreSQL enum[] columns may surface as "{a,b}" strings in some code paths.
+    def normalize_array_value(value)
+      return [] if value.nil?
+      return value.compact.map(&:to_s).reject(&:blank?) if value.is_a?(Array)
+
+      text = value.to_s.strip
+      return [] if text.blank? || text == "{}"
+
+      if text.start_with?("{") && text.end_with?("}")
+        text = text[1..-2]
+      end
+
+      text.split(",").map { |token| token.strip.gsub(/\A"|"\z/, "") }.reject(&:blank?)
     end
   end
 end

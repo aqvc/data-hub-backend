@@ -14,6 +14,12 @@ module Mutations
       strategy = InvestmentStrategy.new(
         investor_id: investor.id,
         name: name.presence || "",
+        investor_type_focus: [],
+        sector_investment_focus: [],
+        maturity_focus: [],
+        stage_focus: [],
+        asset_class_focus: [],
+        strategy_focus: [],
         created_by_id: current_user_id,
         created_at_utc: Time.now.utc
       )

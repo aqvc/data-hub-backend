@@ -19,7 +19,7 @@ module GraphqlApi
       sql = <<~SQL
         SELECT i.type AS label, COUNT(DISTINCT s.investor_id) AS count
         FROM public.investment_strategies s
-        INNER JOIN public.investors i ON i.id = s.investor_id
+        INNER JOIN public.investors i ON i.id::text = s.investor_id::text
         WHERE s.investor_id IS NOT NULL
           AND i.type IS NOT NULL
         GROUP BY i.type
@@ -48,8 +48,8 @@ module GraphqlApi
       sql = <<~SQL
         SELECT c.name AS label, COUNT(DISTINCT s.investor_id) AS count
         FROM public.investment_strategies s
-        INNER JOIN public.investment_strategy_country_focus cf ON cf.investment_strategy_id = s.id
-        INNER JOIN public.countries c ON c.id = cf.country_id
+        INNER JOIN public.investment_strategy_country_focus cf ON cf.investment_strategy_id::text = s.id::text
+        INNER JOIN public.countries c ON c.id::text = cf.country_id::text
         WHERE s.investor_id IS NOT NULL
           AND c.name IS NOT NULL
         GROUP BY c.name
@@ -62,8 +62,8 @@ module GraphqlApi
       sql = <<~SQL
         SELECT r.name AS label, COUNT(DISTINCT s.investor_id) AS count
         FROM public.investment_strategies s
-        INNER JOIN public.investment_strategy_region_focus rf ON rf.investment_strategy_id = s.id
-        INNER JOIN public.regions r ON r.id = rf.region_id
+        INNER JOIN public.investment_strategy_region_focus rf ON rf.investment_strategy_id::text = s.id::text
+        INNER JOIN public.regions r ON r.id::text = rf.region_id::text
         WHERE s.investor_id IS NOT NULL
           AND r.name IS NOT NULL
         GROUP BY r.name
