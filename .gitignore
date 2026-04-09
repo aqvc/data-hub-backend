@@ -13,6 +13,7 @@
 **/tmp/cache/
 /log/development.log
 /tmp/pids/
+/.DS_Store
 
 # Ignore all logfiles and tempfiles.
 /log/*

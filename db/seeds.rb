@@ -1,4 +1,5 @@
 require "securerandom"
+require_relative "seeds/master_geography"
 
 ADMIN_USER_ID = "11111111-1111-1111-1111-111111111111".freeze
 ACCOUNT_MANAGER_1_USER_ID = "22222222-2222-2222-2222-222222222222".freeze
@@ -17,6 +18,9 @@ ADMIN_PASSWORD = "Admin123!".freeze
 DEFAULT_PASSWORD = "Password123!".freeze
 
 SEED_TIMESTAMP = Time.utc(2025, 6, 25)
+
+geo_result = Seeds::MasterGeography.seed!
+puts "Master geography seed complete: #{geo_result.inspect}"
 
 def upsert_role(id:, name:, normalized_name:)
   role = Role.find_or_initialize_by(id: id)

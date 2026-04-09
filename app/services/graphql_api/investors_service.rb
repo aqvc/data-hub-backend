@@ -92,6 +92,7 @@ module GraphqlApi
 
     def normalize_column_filters(column_filter)
       hash = input_hash(column_filter)
+      partial_match_ids = %w[offices]
 
       hash.each_with_object([]) do |(key, raw_value), filters|
         next if key.to_s == "name"
@@ -99,9 +100,17 @@ module GraphqlApi
         values = normalize_values(raw_value)
         next if values.empty?
 
+        operator = if values.length > 1
+                     "inArray"
+                   elsif partial_match_ids.include?(key.to_s)
+                     "iLike"
+                   else
+                     "eq"
+                   end
+
         filters << {
           id: key.to_s,
-          operator: values.length > 1 ? "inArray" : "eq",
+          operator: operator,
           value: values.length > 1 ? values : values.first
         }
       end
@@ -196,6 +205,8 @@ module GraphqlApi
         apply_scalar_filter(scope, "public.ideal_investor_profiles.id", filter)
       when "headquarterCity"
         apply_text_filter(Investor.left_outer_joins(:location), "public.locations.city", filter)
+      when "offices"
+        apply_text_filter(Investor.all, "public.investors.offices", filter)
       when "headquarterCountry"
         scope = Investor.left_outer_joins(location: :country)
         apply_scalar_filter(scope, "public.countries.id", filter)
@@ -415,6 +426,7 @@ module GraphqlApi
         when "updatedAtUtc" then "public.investors.updated_at_utc"
         when "qualified" then "public.investors.qualified"
         when "source" then "public.investors.source"
+        when "offices" then "public.investors.offices"
         when "headquarterCity"
           "(SELECT l.city FROM public.locations l WHERE l.id::text = public.investors.location_id::text LIMIT 1)"
         when "headquarterCountry"
@@ -509,10 +521,12 @@ module GraphqlApi
         id: investor.id,
         name: investor.name,
         website_url: investor.website_url,
+        linked_in_url: investor.linked_in_url,
         type: investor.type,
         updated_at_utc: investor.updated_at_utc,
         qualified: investor.qualified,
         source: investor.qualified ? nil : investor.source,
+        offices: investor.offices,
         contacts_count: investor.investor_contacts.size,
         location: serialize_location(investor.location),
         investment_vehicles: investor.investment_vehicles.map do |vehicle|

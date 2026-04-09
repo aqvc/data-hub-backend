@@ -122,6 +122,8 @@ module GraphqlApi
           ],
           condition: scalar_condition("rgn.id", operator, values)
         )
+      when "offices"
+        text_condition("public.investors.offices", operator, values)
 
       # ── Investment strategy array columns ─────────────────────────────────
       when "assetClassFocus"

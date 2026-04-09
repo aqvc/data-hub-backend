@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_04_06_171000) do
+ActiveRecord::Schema[7.0].define(version: 2026_04_08_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "hstore"
   enable_extension "pgcrypto"
@@ -507,6 +507,7 @@ ActiveRecord::Schema[7.0].define(version: 2026_04_06_171000) do
     t.string "updated_by_id"
     t.text "internal_description"
     t.text "source"
+    t.text "offices"
   end
 
   create_table "locations", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|

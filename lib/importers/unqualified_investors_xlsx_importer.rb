@@ -3,6 +3,20 @@ require "roo"
 module Importers
   class UnqualifiedInvestorsXlsxImporter
     DEFAULT_PATH = Rails.root.join("tmp/imports/unqualified_investors.xlsx").to_s
+    CANONICAL_REGIONS = [
+      "Asia",
+      "Africa",
+      "Europe",
+      "Oceania",
+      "Caribbean",
+      "South America",
+      "North America",
+      "Middle East",
+      "Eastern Europe",
+      "Europe/Asia",
+      "Global",
+      "Asia/Pacific"
+    ].freeze
 
     HEADER_ALIASES = {
       external_id: ["Investor ID", "ID", "External ID"],
@@ -28,6 +42,24 @@ module Importers
       "u.k." => "United Kingdom",
       "uae" => "United Arab Emirates",
       "u.a.e" => "United Arab Emirates"
+    }.freeze
+    REGION_ALIASES = {
+      "america" => "North America",
+      "americas" => "North America",
+      "na" => "North America",
+      "north america" => "North America",
+      "eu" => "Europe",
+      "uk/europe" => "Europe",
+      "apac" => "Asia/Pacific",
+      "asia pacific" => "Asia/Pacific",
+      "middle-east" => "Middle East",
+      "middle east and north africa" => "Middle East",
+      "mena" => "Middle East",
+      "latam" => "South America",
+      "latin america" => "South America",
+      "global" => "Global",
+      "world" => "Global",
+      "worldwide" => "Global"
     }.freeze
 
     def initialize(file_path: DEFAULT_PATH, dry_run: false, user_id: nil, sheet_name: nil, logger: $stdout)
@@ -341,36 +373,25 @@ module Importers
       return nil if key.blank?
 
       country = @countries_by_name[key]
-      return country.id if country
+      if country
+        reconcile_country_region!(country, region_name)
+        return country.id
+      end
 
-      region_id = region_id_by_name(region_name) || region_id_by_name("Unknown")
-      return nil if region_id.blank?
-
-      country = Country.create!(
-        region_id: region_id,
-        name: canonical_country_name(country_name),
-        iso_code: fallback_code(country_name, 2, "XX"),
-        iso3code: fallback_code(country_name, 3, "XXX"),
-        calling_code: "+0",
-        created_at_utc: Time.current.utc
-      )
-      @countries_by_name[key] = country
-      country.id
+      @stats["country_values_ignored_unknown"] += 1
+      nil
     end
 
     def region_id_by_name(region_name)
-      key = normalize_key(region_name.presence || "Unknown")
+      canonical = canonical_region_name(region_name)
+      return nil if canonical.blank?
+
+      key = normalize_key(canonical)
       region = @regions_by_name[key]
       return region.id if region
 
-      region = Region.create!(
-        name: region_name.presence || "Unknown",
-        code: fallback_code(region_name.presence || "Unknown", 3, "UNK"),
-        description: nil,
-        created_at_utc: Time.current.utc
-      )
-      @regions_by_name[key] = region
-      region.id
+      @stats["region_values_ignored_unknown"] += 1
+      nil
     end
 
     def map_investor_type(value)
@@ -581,13 +602,52 @@ module Importers
     end
 
     def split_region_values(value)
-      split_list(value).map(&:strip).reject(&:blank?).uniq
+      split_list(value)
+        .map { |item| canonical_region_name(item) }
+        .reject(&:blank?)
+        .uniq
     end
 
     def region_name_by_id(region_id)
       return nil if region_id.blank?
 
       @regions_by_id[region_id]&.name
+    end
+
+    def canonical_region_name(value)
+      raw = value.to_s.strip
+      return nil if raw.blank?
+
+      normalized = raw.gsub(/\(.*?\)/, "").strip
+      candidate = REGION_ALIASES[normalized.downcase] || normalized
+      canonical = CANONICAL_REGIONS.find { |name| normalize_key(name) == normalize_key(candidate) }
+      canonical
+    end
+
+    def reconcile_country_region!(country, region_name)
+      target_region_id = region_id_by_name(region_name)
+      return if target_region_id.blank?
+      return if country.region_id.to_s == target_region_id.to_s
+
+      global_region_id = @regions_by_name[normalize_key("Global")]&.id
+      if target_region_id.to_s == global_region_id.to_s &&
+         country.region_id.present? &&
+         country.region_id.to_s != global_region_id.to_s
+        return
+      end
+
+      previous_region_id = country.region_id
+      country.region_id = target_region_id
+      country.updated_at_utc = Time.current.utc if country.respond_to?(:updated_at_utc=)
+      save_record(country, :countries_updated)
+
+      if previous_region_id.present?
+        @country_ids_by_region_id[previous_region_id]&.delete(country.id)
+      end
+      @country_ids_by_region_id[target_region_id] ||= []
+      unless @country_ids_by_region_id[target_region_id].include?(country.id)
+        @country_ids_by_region_id[target_region_id] << country.id
+      end
     end
 
     def fallback_code(value, length, default)

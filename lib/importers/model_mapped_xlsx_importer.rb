@@ -104,6 +104,7 @@ module Importers
         investor.aum_aprox_in_currency = to_decimal(row["AUM Approx"])
         investor.internal_description = row["Descriptions"].to_s.strip.presence
         investor.source = row["Sources"].to_s.strip.presence
+        investor.offices = row["Offices"].to_s.strip.presence
         qualified_value = to_boolean(row["Qualified"])
         investor.qualified = qualified_value.nil? ? (investor.qualified.nil? ? true : investor.qualified) : qualified_value
         investor.created_by_id ||= @user_id
@@ -161,16 +162,25 @@ module Importers
           save_record(focus, :investment_strategy_region_focus)
         end
 
-        resolve_country_focus_ids(
+        InvestmentStrategyRegionFocus.where(investment_strategy_id: strategy.id)
+                                     .where.not(region_id: region_focus_ids)
+                                     .delete_all
+
+        country_focus_ids = resolve_country_focus_ids(
           country_value: row["Country Headquater"],
           region_ids: region_focus_ids
-        ).each do |country_id|
+        )
+        country_focus_ids.each do |country_id|
           focus = InvestmentStrategyCountryFocus.find_or_initialize_by(
             investment_strategy_id: strategy.id,
             country_id: country_id
           )
           save_record(focus, :investment_strategy_country_focus)
         end
+
+        InvestmentStrategyCountryFocus.where(investment_strategy_id: strategy.id)
+                                      .where.not(country_id: country_focus_ids)
+                                      .delete_all
       end
     end
 
@@ -322,7 +332,10 @@ module Importers
       return nil if key.blank?
 
       country = @countries_by_name[key]
-      return country.id if country
+      if country
+        reconcile_country_region!(country, region_name)
+        return country.id
+      end
 
       primary_region = split_region_values(region_name).first
       region_id = region_id_by_name(primary_region, allow_unknown: false) || region_id_by_name("Unknown")
@@ -340,6 +353,35 @@ module Importers
       @country_ids_by_region_id[region_id] ||= []
       @country_ids_by_region_id[region_id] << country.id
       country.id
+    end
+
+    def reconcile_country_region!(country, region_name)
+      primary_region = split_region_values(region_name).first
+      return if primary_region.blank?
+
+      target_region_id = region_id_by_name(primary_region, allow_unknown: false)
+      return if target_region_id.blank?
+      global_region_id = @regions_by_name[normalize_key("Global")]&.id
+      if target_region_id.to_s == global_region_id.to_s &&
+         country.region_id.present? &&
+         country.region_id.to_s != global_region_id.to_s
+        # Keep specific mapping and avoid downgrading to Global.
+        return
+      end
+      return if country.region_id.to_s == target_region_id.to_s
+
+      previous_region_id = country.region_id
+      country.region_id = target_region_id
+      country.updated_at_utc = Time.current.utc if country.respond_to?(:updated_at_utc=)
+      save_record(country, :countries_updated)
+
+      if previous_region_id.present?
+        @country_ids_by_region_id[previous_region_id]&.delete(country.id)
+      end
+      @country_ids_by_region_id[target_region_id] ||= []
+      unless @country_ids_by_region_id[target_region_id].include?(country.id)
+        @country_ids_by_region_id[target_region_id] << country.id
+      end
     end
 
     def region_id_by_name(name, allow_unknown: true)
@@ -416,7 +458,7 @@ module Importers
       mapping = {
         "technology" => "technology_media_and_telecommunications",
         "software_as_a_service_saa_s" => "software_as_a_service",
-        "saas" => "saa_s",
+        "saas" => "software_as_a_service",
         "web3" => "blockchain_and_web3",
         "blockchain" => "blockchain_and_web3",
         "healthcare" => "health_tech",

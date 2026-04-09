@@ -209,6 +209,7 @@ module Api
         type: investor.type,
         updatedAtUtc: investor.updated_at_utc,
         qualified: investor.qualified,
+        offices: investor.offices,
         location: serialize_location(investor.location),
         investmentVehicles: investor.investment_vehicles.map do |vehicle|
           {
