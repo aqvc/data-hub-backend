@@ -22,6 +22,32 @@ SEED_TIMESTAMP = Time.utc(2025, 6, 25)
 geo_result = Seeds::MasterGeography.seed!
 puts "Master geography seed complete: #{geo_result.inspect}"
 
+CURRENCY_SEEDS = [
+  { code: "AED", symbol: "AED", name: "United Arab Emirates Dirham" },
+  { code: "AUD", symbol: "A$", name: "Australian Dollar" },
+  { code: "BRL", symbol: "R$", name: "Brazilian Real" },
+  { code: "CAD", symbol: "C$", name: "Canadian Dollar" },
+  { code: "CHF", symbol: "CHF", name: "Swiss Franc" },
+  { code: "CNY", symbol: "¥", name: "Chinese Yuan" },
+  { code: "DKK", symbol: "DKK", name: "Danish Krone" },
+  { code: "EUR", symbol: "€", name: "Euro" },
+  { code: "GBP", symbol: "£", name: "British Pound" },
+  { code: "HKD", symbol: "HK$", name: "Hong Kong Dollar" },
+  { code: "INR", symbol: "₹", name: "Indian Rupee" },
+  { code: "JPY", symbol: "¥", name: "Japanese Yen" },
+  { code: "KRW", symbol: "₩", name: "South Korean Won" },
+  { code: "MXN", symbol: "M$", name: "Mexican Peso" },
+  { code: "NOK", symbol: "NOK", name: "Norwegian Krone" },
+  { code: "NZD", symbol: "NZ$", name: "New Zealand Dollar" },
+  { code: "PHP", symbol: "₱", name: "Philippine Peso" },
+  { code: "PLN", symbol: "zł", name: "Polish Zloty" },
+  { code: "SAR", symbol: "SAR", name: "Saudi Riyal" },
+  { code: "SEK", symbol: "SEK", name: "Swedish Krona" },
+  { code: "SGD", symbol: "S$", name: "Singapore Dollar" },
+  { code: "TWD", symbol: "NT$", name: "New Taiwan Dollar" },
+  { code: "USD", symbol: "$", name: "United States Dollar" }
+].freeze
+
 def upsert_role(id:, name:, normalized_name:)
   role = Role.find_or_initialize_by(id: id)
   role.name = name
@@ -67,6 +93,29 @@ def ensure_user_role(user_id:, role_id:)
 
   UserRole.create!(user_id: user_id, role_id: role_id)
 end
+
+def upsert_currency(code:, symbol:, name:)
+  currency = Currency.find_or_initialize_by(code: code)
+  currency.symbol = symbol
+  currency.name = name
+  currency.decimal_places ||= 2 if currency.respond_to?(:decimal_places=)
+  currency.is_active = true if currency.respond_to?(:is_active=)
+  currency.created_at_utc ||= Time.current.utc if currency.respond_to?(:created_at_utc=)
+  currency.updated_at_utc = Time.current.utc if currency.respond_to?(:updated_at_utc=)
+  currency.save!
+  currency
+end
+
+ActiveRecord::Base.transaction do
+  CURRENCY_SEEDS.each do |currency|
+    upsert_currency(
+      code: currency[:code],
+      symbol: currency[:symbol],
+      name: currency[:name]
+    )
+  end
+end
+puts "Currency seed complete: #{Currency.count} currencies ensured."
 
 ActiveRecord::Base.transaction do
   admin_role = upsert_role(id: ADMIN_ROLE_ID, name: "Admin", normalized_name: "ADMIN")

@@ -8,7 +8,8 @@ class ProofLedgerPersistenceService
       attrs = point.transform_keys { |k| k.to_s.underscore }
       attrs = fallback_relation.merge(attrs)
 
-      next if attrs["field_id"].blank? || attrs["proof_type"].blank?
+      next if attrs["field_id"].blank?
+      attrs["proof_type"] = attrs["proof_type"].presence || "manual"
 
       proof_ledger_attrs = {
         investor_id: attrs["investor_id"],
