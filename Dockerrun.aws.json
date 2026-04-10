@@ -1,7 +1,7 @@
 {
   "AWSEBDockerrunVersion": "1",
     "Image": {
-    "Name": "908027420605.dkr.ecr.us-east-1.amazonaws.com/data-hub-backend:latest",
+    "Name": "908027420605.dkr.ecr.us-east-1.amazonaws.com/data-hub-backend:v2",
     "Update": "true"
   },
   "Ports": [
