@@ -30,7 +30,7 @@ module Importers
       @file_path = file_path
       @dry_run = dry_run
       @logger = logger
-      @user_id = user_id.presence || User.order(:created_at_utc).limit(1).pick(:id)
+      @user_id = user_id.presence || User.order(:created_at).limit(1).pick(:id)
       raise "No user found. Pass USER_ID=<uuid>." if @user_id.blank?
 
       @external_investor_to_uuid = {}

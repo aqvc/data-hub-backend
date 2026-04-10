@@ -32,7 +32,7 @@ module GraphqlApi
           {
             user_id: user.id,
             user_name: user.user_name.presence || user.email,
-            user_created_at: user.created_at_utc,
+            user_created_at: user.created_at,
             total_created_all_time: created_scope.count,
             total_qualified_all_time: qualified_scope.count,
             total_proof_points_all_time: proof_scope.count,

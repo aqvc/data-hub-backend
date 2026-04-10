@@ -83,16 +83,13 @@ module Types
       user = User.find_by(id: id)
       raise_not_found("Users.NotFound", id, "user") if user.nil?
 
-      details = UserDetail.find_by(id: user.id)
       deep_camelize(
         id: user.id,
         email: user.email,
         email_confirmed: user.email_confirmed,
-        created_at_utc: user.created_at_utc,
-        user_details: {
-          first_name: details&.first_name,
-          last_name: details&.last_name
-        },
+        created_at: user.created_at,
+        first_name: user.first_name,
+        last_name: user.last_name,
         organization: {}
       )
     end

@@ -24,17 +24,13 @@ module Api
         )
       end
 
-      details = UserDetail.find_by(id: user.id)
-
       render json: {
         id: user.id,
         email: user.email,
         emailConfirmed: user.email_confirmed,
-        createdAtUtc: user.created_at_utc,
-        userDetails: {
-          firstName: details&.first_name,
-          lastName: details&.last_name
-        },
+        createdAt: user.created_at,
+        firstName: user.first_name,
+        lastName: user.last_name,
         organization: {}
       }, status: :ok
     end
@@ -120,13 +116,14 @@ module Api
       end
 
       user_id = nil
-      now = Time.now.utc
       creator_id = current_user_id
 
       ActiveRecord::Base.transaction do
         user = User.create!(
           email: email,
           user_name: email,
+          first_name: first_name,
+          last_name: last_name,
           email_confirmed: true,
           password: password.presence || DEFAULT_PASSWORD,
           password_confirmation: password.presence || DEFAULT_PASSWORD,
@@ -136,19 +133,10 @@ module Api
           phone_number_confirmed: false,
           two_factor_enabled: false,
           lockout_enabled: true,
-          created_by_id: creator_id,
-          created_at_utc: now
+          created_by_id: creator_id
         )
 
         UserRole.create!(user_id: user.id, role_id: role.id)
-
-        UserDetail.create!(
-          id: user.id,
-          first_name: first_name,
-          last_name: last_name,
-          created_by_id: creator_id,
-          created_at_utc: now
-        )
 
         user_id = user.id
       end

@@ -25,12 +25,13 @@ module Mutations
       raise_execution_error(code: "Users.RegistrationFailed", detail: "The user registration failed", status: 400, type: "https://tools.ietf.org/html/rfc7231#section-6.5.1") if role.nil?
 
       user_id = nil
-      now = Time.now.utc
 
       ActiveRecord::Base.transaction do
         user = User.create!(
           email: normalized_email,
           user_name: normalized_email,
+          first_name: first_name.to_s,
+          last_name: last_name.to_s,
           email_confirmed: true,
           password: password.presence || DEFAULT_PASSWORD,
           password_confirmation: password.presence || DEFAULT_PASSWORD,
@@ -40,18 +41,10 @@ module Mutations
           phone_number_confirmed: false,
           two_factor_enabled: false,
           lockout_enabled: true,
-          created_by_id: current_user_id,
-          created_at_utc: now
+          created_by_id: current_user_id
         )
 
         UserRole.create!(user_id: user.id, role_id: role.id)
-        UserDetail.create!(
-          id: user.id,
-          first_name: first_name.to_s,
-          last_name: last_name.to_s,
-          created_by_id: current_user_id,
-          created_at_utc: now
-        )
 
         user_id = user.id
       end

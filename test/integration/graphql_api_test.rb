@@ -17,9 +17,10 @@ class GraphqlApiTest < ActionDispatch::IntegrationTest
 
     @admin = User.new(
       created_by_id: "seed-user",
-      created_at_utc: @now,
       user_name: "admin@example.com",
       email: "admin@example.com",
+      first_name: "Ada",
+      last_name: "Admin",
       email_confirmed: true,
       security_stamp: SecureRandom.uuid,
       concurrency_stamp: SecureRandom.uuid,
@@ -34,13 +35,6 @@ class GraphqlApiTest < ActionDispatch::IntegrationTest
     @admin.update_column(:created_by_id, @admin.id)
 
     UserRole.create!(user_id: @admin.id, role_id: @admin_role.id)
-    UserDetail.create!(
-      id: @admin.id,
-      first_name: "Ada",
-      last_name: "Admin",
-      created_by_id: @admin.id,
-      created_at_utc: @now
-    )
 
     @region = Region.create!(
       name: "Asia",
@@ -201,7 +195,7 @@ class GraphqlApiTest < ActionDispatch::IntegrationTest
       }
     GRAPHQL
     user_response = graphql(user_query, variables: { id: @admin.id })
-    assert_equal "Ada", user_response.dig("data", "user", "userDetails", "firstName")
+    assert_equal "Ada", user_response.dig("data", "user", "firstName")
 
     investor_search_query = <<~GRAPHQL
       query($filter: JSON, $columnFilter: JSON) {
@@ -373,7 +367,7 @@ class GraphqlApiTest < ActionDispatch::IntegrationTest
     )
     account_manager_id = create_account_manager.dig("data", "createAccountManager", "id")
     assert account_manager_id.present?
-    assert_equal "Casey", UserDetail.find(account_manager_id).first_name
+    assert_equal "Casey", User.find(account_manager_id).first_name
 
     create_investor = graphql("mutation { createInvestor { id } }")
     created_investor_id = create_investor.dig("data", "createInvestor", "id")

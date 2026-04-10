@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_04_08_120000) do
+ActiveRecord::Schema[7.0].define(version: 2026_04_11_000000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "hstore"
   enable_extension "pgcrypto"
@@ -752,15 +752,6 @@ ActiveRecord::Schema[7.0].define(version: 2026_04_08_120000) do
     t.text "claim_value"
   end
 
-  create_table "user_details_hub", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
-    t.string "first_name"
-    t.string "last_name"
-    t.datetime "created_at_utc", default: -> { "CURRENT_TIMESTAMP" }, null: false
-    t.datetime "updated_at_utc", default: -> { "CURRENT_TIMESTAMP" }
-    t.string "created_by_id", null: false
-    t.string "updated_by_id"
-  end
-
   create_table "user_logins", id: false, force: :cascade do |t|
     t.text "login_provider", null: false
     t.text "provider_key", null: false
@@ -788,8 +779,8 @@ ActiveRecord::Schema[7.0].define(version: 2026_04_08_120000) do
   end
 
   create_table "users", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
-    t.datetime "created_at_utc", default: -> { "CURRENT_TIMESTAMP" }, null: false
-    t.datetime "updated_at_utc", default: -> { "CURRENT_TIMESTAMP" }
+    t.datetime "created_at", default: -> { "CURRENT_TIMESTAMP" }, null: false
+    t.datetime "updated_at", default: -> { "CURRENT_TIMESTAMP" }
     t.string "created_by_id", null: false
     t.string "updated_by_id"
     t.string "user_name"
@@ -807,6 +798,8 @@ ActiveRecord::Schema[7.0].define(version: 2026_04_08_120000) do
     t.boolean "lockout_enabled", null: false
     t.integer "access_failed_count", null: false
     t.string "encrypted_password", default: "", null: false
+    t.string "first_name"
+    t.string "last_name"
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["normalized_email"], name: "index_users_on_normalized_email", unique: true
   end

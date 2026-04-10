@@ -57,12 +57,14 @@ def upsert_role(id:, name:, normalized_name:)
   role
 end
 
-def upsert_user(id:, email:, password:, created_by_id:)
+def upsert_user(id:, email:, password:, first_name:, last_name:, created_by_id:)
   user = User.find_or_initialize_by(id: id)
   user.email = email
   user.user_name = email
   user.normalized_email = email.upcase
   user.normalized_user_name = email.upcase
+  user.first_name = first_name
+  user.last_name = last_name
   user.email_confirmed = true
   user.password = password
   user.password_confirmation = password
@@ -72,20 +74,9 @@ def upsert_user(id:, email:, password:, created_by_id:)
   user.lockout_enabled = true if user.lockout_enabled.nil?
   user.phone_number_confirmed = false if user.phone_number_confirmed.nil?
   user.two_factor_enabled = false if user.two_factor_enabled.nil?
-  user.created_at_utc ||= SEED_TIMESTAMP
   user.created_by_id ||= created_by_id
   user.save!
   user
-end
-
-def upsert_user_detail(id:, first_name:, last_name:, created_by_id:)
-  detail = UserDetail.find_or_initialize_by(id: id)
-  detail.first_name = first_name
-  detail.last_name = last_name
-  detail.created_at_utc ||= SEED_TIMESTAMP
-  detail.created_by_id ||= created_by_id
-  detail.save!
-  detail
 end
 
 def ensure_user_role(user_id:, role_id:)
@@ -134,6 +125,8 @@ ActiveRecord::Base.transaction do
     id: ADMIN_USER_ID,
     email: "admin@aqvc.com",
     password: ADMIN_PASSWORD,
+    first_name: "Admin",
+    last_name: "Test",
     created_by_id: ADMIN_USER_ID
   )
 
@@ -141,6 +134,8 @@ ActiveRecord::Base.transaction do
     id: ACCOUNT_MANAGER_1_USER_ID,
     email: "accmgr1@aqvc.com",
     password: DEFAULT_PASSWORD,
+    first_name: "AccMgr 1",
+    last_name: "Test",
     created_by_id: ADMIN_USER_ID
   )
 
@@ -148,6 +143,8 @@ ActiveRecord::Base.transaction do
     id: ACCOUNT_MANAGER_2_USER_ID,
     email: "accmgr2@aqvc.com",
     password: DEFAULT_PASSWORD,
+    first_name: "AccMgr 2",
+    last_name: "Test",
     created_by_id: ADMIN_USER_ID
   )
 
@@ -155,29 +152,6 @@ ActiveRecord::Base.transaction do
     id: DATA_MANAGER_1_USER_ID,
     email: "datamgr1@aqvc.com",
     password: DEFAULT_PASSWORD,
-    created_by_id: ADMIN_USER_ID
-  )
-
-  upsert_user_detail(
-    id: admin.id,
-    first_name: "Admin",
-    last_name: "Test",
-    created_by_id: ADMIN_USER_ID
-  )
-  upsert_user_detail(
-    id: accmgr1.id,
-    first_name: "AccMgr 1",
-    last_name: "Test",
-    created_by_id: ADMIN_USER_ID
-  )
-  upsert_user_detail(
-    id: accmgr2.id,
-    first_name: "AccMgr 2",
-    last_name: "Test",
-    created_by_id: ADMIN_USER_ID
-  )
-  upsert_user_detail(
-    id: datamgr1.id,
     first_name: "DataMgr",
     last_name: "Test",
     created_by_id: ADMIN_USER_ID
@@ -189,4 +163,4 @@ ActiveRecord::Base.transaction do
   ensure_user_role(user_id: datamgr1.id, role_id: data_manager_role.id)
 end
 
-puts "Seed complete: roles/users/user_details/user_roles ensured."
+puts "Seed complete: roles/users/user_roles ensured."
