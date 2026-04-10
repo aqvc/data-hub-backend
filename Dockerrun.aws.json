@@ -1,0 +1,14 @@
+{
+  "AWSEBDockerrunVersion": "1",
+    "Image": {
+    "Name": "908027420605.dkr.ecr.us-east-1.amazonaws.com/data-hub-backend:latest",
+    "Update": "true"
+  },
+  "Ports": [
+    {
+      "ContainerPort": 3000,
+      "HostPort": 80
+    }
+  ],
+  "Logging": "/app/log"
+}
