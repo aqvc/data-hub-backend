@@ -1,6 +1,8 @@
 Rails.application.routes.draw do
   devise_for :users, skip: :all
   post "/graphql", to: "graphql#execute"
+  get '/health', to: proc { [200, {}, ['ok']] }
+
 
   namespace :api do
     get "analytics/database-insights-overview", to: "analytics#database_insights_overview"
