@@ -1,0 +1,62 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Claude / editor / OS
+.claude
+.idea
+.vscode
+.DS_Store
+*.swp
+
+# Docs
+README.md
+AGENTS.md
+docs
+
+# Tests
+test
+spec
+coverage
+
+# Bundler
+.bundle
+vendor/bundle
+
+# Logs & temp files
+log/*
+!log/.keep
+tmp/*
+!tmp/.keep
+tmp/pids/*
+!tmp/pids/.keep
+
+# Local uploads / SQLite
+storage/*
+!storage/.keep
+*.sqlite3
+*.sqlite3-journal
+
+# Secrets — never bake these into the image
+.env
+.env.*
+!.env*.erb
+config/master.key
+config/credentials/*.key
+config/application.yml
+
+# Elastic Beanstalk local state
+.elasticbeanstalk
+.ebextensions
+.platform
+
+# Docker
+Dockerfile
+.dockerignore
+docker-compose*.yml
+
+# Node (in case anything sneaks in)
+node_modules
+npm-debug.log
+yarn-error.log

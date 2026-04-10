@@ -42,7 +42,7 @@ class OrganizationContact < ApplicationRecord
   }
   enum :pipeline_status, {
     initiated: "initiated",
-    new: "new",
+    new_organization_contact: "new_organization_contact",
     nurturing: "nurturing",
     soft_commit: "soft_commit",
     unknown: "unknown"
