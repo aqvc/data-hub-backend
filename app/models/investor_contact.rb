@@ -1,5 +1,7 @@
 class InvestorContact < ApplicationRecord
 
+  acts_as_paranoid
+
   self.table_name = "public.investor_contacts"
 
   belongs_to :investor

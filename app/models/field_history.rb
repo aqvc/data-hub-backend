@@ -1,5 +1,7 @@
 class FieldHistory < ApplicationRecord
 
+  acts_as_paranoid
+
   belongs_to :investment_entity, optional: true
   belongs_to :investment_strategy, optional: true
   belongs_to :investment_vehicle, optional: true
