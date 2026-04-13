@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_04_11_000000) do
+ActiveRecord::Schema[7.0].define(version: 2026_04_12_000000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "hstore"
   enable_extension "pgcrypto"
@@ -95,6 +95,8 @@ ActiveRecord::Schema[7.0].define(version: 2026_04_11_000000) do
   create_table "events", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.text "name", null: false
     t.string "investor_id"
+    t.datetime "deleted_at"
+    t.index ["deleted_at"], name: "index_events_on_deleted_at"
   end
 
   create_table "feedback_ledgers", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -126,6 +128,8 @@ ActiveRecord::Schema[7.0].define(version: 2026_04_11_000000) do
     t.datetime "updated_at_utc", default: -> { "CURRENT_TIMESTAMP" }
     t.string "created_by_id", null: false
     t.string "updated_by_id"
+    t.datetime "deleted_at"
+    t.index ["deleted_at"], name: "index_field_history_on_deleted_at"
   end
 
   create_table "fund_profiles", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -330,6 +334,8 @@ ActiveRecord::Schema[7.0].define(version: 2026_04_11_000000) do
     t.string "updated_by_id"
     t.datetime "created_at_utc", default: -> { "CURRENT_TIMESTAMP" }, null: false
     t.datetime "updated_at_utc", default: -> { "CURRENT_TIMESTAMP" }
+    t.datetime "deleted_at"
+    t.index ["deleted_at"], name: "index_investment_strategies_on_deleted_at"
   end
 
   create_table "investment_strategy_country_focus", id: false, force: :cascade do |t|
@@ -455,6 +461,8 @@ ActiveRecord::Schema[7.0].define(version: 2026_04_11_000000) do
     t.string "updated_by_id"
     t.datetime "created_at_utc", default: -> { "CURRENT_TIMESTAMP" }, null: false
     t.datetime "updated_at_utc", default: -> { "CURRENT_TIMESTAMP" }
+    t.datetime "deleted_at"
+    t.index ["deleted_at"], name: "index_investor_contacts_on_deleted_at"
   end
 
   create_table "investor_contacts_related", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -469,6 +477,8 @@ ActiveRecord::Schema[7.0].define(version: 2026_04_11_000000) do
   create_table "investor_currencies", id: false, force: :cascade do |t|
     t.string "investor_id", null: false
     t.string "currency_id", null: false
+    t.datetime "deleted_at"
+    t.index ["deleted_at"], name: "index_investor_currencies_on_deleted_at"
   end
 
   create_table "investors", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -508,6 +518,8 @@ ActiveRecord::Schema[7.0].define(version: 2026_04_11_000000) do
     t.text "internal_description"
     t.text "source"
     t.text "offices"
+    t.datetime "deleted_at"
+    t.index ["deleted_at"], name: "index_investors_on_deleted_at"
   end
 
   create_table "locations", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -640,6 +652,8 @@ ActiveRecord::Schema[7.0].define(version: 2026_04_11_000000) do
     t.datetime "updated_at_utc", default: -> { "CURRENT_TIMESTAMP" }
     t.string "created_by_id", null: false
     t.string "updated_by_id"
+    t.datetime "deleted_at"
+    t.index ["deleted_at"], name: "index_proof_ledger_comments_on_deleted_at"
   end
 
   create_table "proof_ledgers", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -668,6 +682,8 @@ ActiveRecord::Schema[7.0].define(version: 2026_04_11_000000) do
     t.datetime "updated_at_utc", default: -> { "CURRENT_TIMESTAMP" }
     t.string "created_by_id", null: false
     t.string "updated_by_id"
+    t.datetime "deleted_at"
+    t.index ["deleted_at"], name: "index_proof_ledgers_on_deleted_at"
   end
 
   create_table "prospect_job_audit_trails", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|

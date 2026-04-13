@@ -5,6 +5,7 @@ module Types
     field :create_account_manager, mutation: Mutations::CreateAccountManager
     field :create_investor, mutation: Mutations::CreateInvestor
     field :update_investor, mutation: Mutations::UpdateInvestor
+    field :delete_investor, mutation: Mutations::DeleteInvestor
     field :qualify_investor, mutation: Mutations::QualifyInvestor
     field :create_investment_vehicle, mutation: Mutations::CreateInvestmentVehicle
     field :update_investment_vehicle, mutation: Mutations::UpdateInvestmentVehicle

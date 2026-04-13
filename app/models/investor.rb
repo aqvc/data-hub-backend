@@ -1,5 +1,7 @@
 class Investor < ApplicationRecord
 
+  acts_as_paranoid
+
   self.table_name = "public.investors"
   self.inheritance_column = :_type_disabled
 
@@ -9,14 +11,16 @@ class Investor < ApplicationRecord
   belongs_to :created_by, class_name: "User", foreign_key: :created_by_id
   belongs_to :qualified_by, class_name: "User", foreign_key: :qualified_by_id, optional: true
   belongs_to :updated_by, class_name: "User", foreign_key: :updated_by_id, optional: true
+  # Vehicles are intentionally NOT cascaded on investor deletion.
   has_many :investment_vehicles
-  has_many :investment_strategies
-  has_many :investor_contacts
-  has_many :events
-  has_many :field_histories
-  has_many :investor_currencies
-  has_many :proof_ledger_comments
-  has_many :proof_ledgers
+  # Owned associations — cascade soft-delete when the investor is destroyed.
+  has_many :investment_strategies, dependent: :destroy
+  has_many :investor_contacts, dependent: :destroy
+  has_many :events, dependent: :destroy
+  has_many :field_histories, dependent: :destroy
+  has_many :investor_currencies, dependent: :destroy
+  has_many :proof_ledger_comments, dependent: :destroy
+  has_many :proof_ledgers, dependent: :destroy
 
   enum :type, {
     asset_manager: "asset_manager",

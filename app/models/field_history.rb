@@ -1,5 +1,9 @@
 class FieldHistory < ApplicationRecord
 
+  self.table_name = "public.field_history"
+
+  acts_as_paranoid
+
   belongs_to :investment_entity, optional: true
   belongs_to :investment_strategy, optional: true
   belongs_to :investment_vehicle, optional: true

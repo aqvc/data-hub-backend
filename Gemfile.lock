@@ -74,6 +74,9 @@ GEM
       mutex_m
       securerandom (>= 0.3)
       tzinfo (~> 2.0)
+    acts_as_paranoid (0.11.0)
+      activerecord (>= 6.1, < 8.2)
+      activesupport (>= 6.1, < 8.2)
     base64 (0.3.0)
     bcrypt (3.1.22)
     benchmark (0.5.0)
@@ -231,6 +234,7 @@ PLATFORMS
   x86_64-linux
 
 DEPENDENCIES
+  acts_as_paranoid (~> 0.9)
   bootsnap
   byebug
   debug

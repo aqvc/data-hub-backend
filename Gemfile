@@ -12,6 +12,7 @@ gem "jwt", "~> 2.8"
 gem "devise", "~> 4.9"
 gem "graphql", "~> 2.3.4"
 gem "roo", "~> 2.10"
+gem "acts_as_paranoid", "~> 0.9"
 
 # Use the Puma web server [https://github.com/puma/puma]
 gem "puma", "~> 5.0"

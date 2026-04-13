@@ -1,5 +1,7 @@
 class InvestmentStrategy < ApplicationRecord
 
+  acts_as_paranoid
+
   self.table_name = "public.investment_strategies"
 
   belongs_to :investor, class_name: "Investor", optional: true
