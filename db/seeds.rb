@@ -1,166 +1,102 @@
 require "securerandom"
 require_relative "seeds/master_geography"
 
-ADMIN_USER_ID = "11111111-1111-1111-1111-111111111111".freeze
-ACCOUNT_MANAGER_1_USER_ID = "22222222-2222-2222-2222-222222222222".freeze
-ACCOUNT_MANAGER_2_USER_ID = "33333333-3333-3333-3333-333333333333".freeze
-DATA_MANAGER_1_USER_ID = "44444444-4444-4444-4444-444444444444".freeze
-
-ADMIN_ROLE_ID = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa".freeze
-ACCOUNT_MANAGER_ROLE_ID = "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb".freeze
-DATA_MANAGER_ROLE_ID = "cccccccc-cccc-cccc-cccc-cccccccccccc".freeze
-
-# Mirrors legacy .NET seed hashes so existing credentials continue to work:
-# Devise-backed development credentials:
-# - admin@aqvc.com => Admin123!
-# - other seed users => Password123!
-ADMIN_PASSWORD = "Admin123!".freeze
-DEFAULT_PASSWORD = "Password123!".freeze
-
-SEED_TIMESTAMP = Time.utc(2025, 6, 25)
+# ── Geography & Currencies ──────────────────────────────────────────
 
 geo_result = Seeds::MasterGeography.seed!
 puts "Master geography seed complete: #{geo_result.inspect}"
 
 CURRENCY_SEEDS = [
   { code: "AED", symbol: "AED", name: "United Arab Emirates Dirham" },
-  { code: "AUD", symbol: "A$", name: "Australian Dollar" },
-  { code: "BRL", symbol: "R$", name: "Brazilian Real" },
-  { code: "CAD", symbol: "C$", name: "Canadian Dollar" },
+  { code: "AUD", symbol: "A$",  name: "Australian Dollar" },
+  { code: "BRL", symbol: "R$",  name: "Brazilian Real" },
+  { code: "CAD", symbol: "C$",  name: "Canadian Dollar" },
   { code: "CHF", symbol: "CHF", name: "Swiss Franc" },
-  { code: "CNY", symbol: "¥", name: "Chinese Yuan" },
+  { code: "CNY", symbol: "¥",   name: "Chinese Yuan" },
   { code: "DKK", symbol: "DKK", name: "Danish Krone" },
-  { code: "EUR", symbol: "€", name: "Euro" },
-  { code: "GBP", symbol: "£", name: "British Pound" },
+  { code: "EUR", symbol: "€",   name: "Euro" },
+  { code: "GBP", symbol: "£",   name: "British Pound" },
   { code: "HKD", symbol: "HK$", name: "Hong Kong Dollar" },
-  { code: "INR", symbol: "₹", name: "Indian Rupee" },
-  { code: "JPY", symbol: "¥", name: "Japanese Yen" },
-  { code: "KRW", symbol: "₩", name: "South Korean Won" },
-  { code: "MXN", symbol: "M$", name: "Mexican Peso" },
+  { code: "INR", symbol: "₹",   name: "Indian Rupee" },
+  { code: "JPY", symbol: "¥",   name: "Japanese Yen" },
+  { code: "KRW", symbol: "₩",   name: "South Korean Won" },
+  { code: "MXN", symbol: "M$",  name: "Mexican Peso" },
   { code: "NOK", symbol: "NOK", name: "Norwegian Krone" },
   { code: "NZD", symbol: "NZ$", name: "New Zealand Dollar" },
-  { code: "PHP", symbol: "₱", name: "Philippine Peso" },
-  { code: "PLN", symbol: "zł", name: "Polish Zloty" },
+  { code: "PHP", symbol: "₱",   name: "Philippine Peso" },
+  { code: "PLN", symbol: "zł",  name: "Polish Zloty" },
   { code: "SAR", symbol: "SAR", name: "Saudi Riyal" },
   { code: "SEK", symbol: "SEK", name: "Swedish Krona" },
-  { code: "SGD", symbol: "S$", name: "Singapore Dollar" },
+  { code: "SGD", symbol: "S$",  name: "Singapore Dollar" },
   { code: "TWD", symbol: "NT$", name: "New Taiwan Dollar" },
-  { code: "USD", symbol: "$", name: "United States Dollar" }
+  { code: "USD", symbol: "$",   name: "United States Dollar" }
 ].freeze
 
-def upsert_role(id:, name:, normalized_name:)
-  role = Role.find_or_initialize_by(id: id)
-  role.name = name
-  role.normalized_name = normalized_name
-  role.concurrency_stamp ||= SecureRandom.uuid
-  role.save!
-  role
-end
-
-def upsert_user(id:, email:, password:, first_name:, last_name:, created_by_id:)
-  user = User.find_or_initialize_by(id: id)
-  user.email = email
-  user.user_name = email
-  user.normalized_email = email.upcase
-  user.normalized_user_name = email.upcase
-  user.first_name = first_name
-  user.last_name = last_name
-  user.email_confirmed = true
-  user.password = password
-  user.password_confirmation = password
-  user.security_stamp ||= id
-  user.concurrency_stamp ||= id
-  user.access_failed_count ||= 0
-  user.lockout_enabled = true if user.lockout_enabled.nil?
-  user.phone_number_confirmed = false if user.phone_number_confirmed.nil?
-  user.two_factor_enabled = false if user.two_factor_enabled.nil?
-  user.created_by_id ||= created_by_id
-  user.save!
-  user
-end
-
-def ensure_user_role(user_id:, role_id:)
-  return if UserRole.exists?(user_id: user_id, role_id: role_id)
-
-  UserRole.create!(user_id: user_id, role_id: role_id)
-end
-
-def upsert_currency(code:, symbol:, name:)
-  currency = Currency.find_or_initialize_by(code: code)
-  currency.symbol = symbol
-  currency.name = name
-  currency.decimal_places ||= 2 if currency.respond_to?(:decimal_places=)
-  currency.is_active = true if currency.respond_to?(:is_active=)
-  currency.created_at_utc ||= Time.current.utc if currency.respond_to?(:created_at_utc=)
-  currency.updated_at_utc = Time.current.utc if currency.respond_to?(:updated_at_utc=)
-  currency.save!
-  currency
-end
-
 ActiveRecord::Base.transaction do
-  CURRENCY_SEEDS.each do |currency|
-    upsert_currency(
-      code: currency[:code],
-      symbol: currency[:symbol],
-      name: currency[:name]
-    )
+  CURRENCY_SEEDS.each do |attrs|
+    currency = Currency.find_or_initialize_by(code: attrs[:code])
+    currency.symbol = attrs[:symbol]
+    currency.name   = attrs[:name]
+    currency.decimal_places ||= 2        if currency.respond_to?(:decimal_places=)
+    currency.is_active       = true      if currency.respond_to?(:is_active=)
+    currency.created_at_utc ||= Time.current.utc if currency.respond_to?(:created_at_utc=)
+    currency.updated_at_utc  = Time.current.utc  if currency.respond_to?(:updated_at_utc=)
+    currency.save!
   end
 end
 puts "Currency seed complete: #{Currency.count} currencies ensured."
 
+# ── Roles ────────────────────────────────────────────────────────────
+
+ROLE_NAMES = %w[admin account_manager data_manager member].freeze
+
+ROLE_NAMES.each do |name|
+  Role.find_or_create_by!(name: name) do |role|
+    role.normalized_name   = name.upcase
+    role.concurrency_stamp = SecureRandom.uuid
+  end
+end
+puts "Roles seed complete: #{Role.pluck(:name).join(', ')}"
+
+# ── Seed Users ───────────────────────────────────────────────────────
+
+SEED_USERS = [
+  { email: "admin@aqvc.com",    password: "Admin123!",    first_name: "Admin",    last_name: "Test", role: :admin },
+  { email: "accmgr1@aqvc.com",  password: "Password123!", first_name: "AccMgr 1", last_name: "Test", role: :account_manager },
+  { email: "accmgr2@aqvc.com",  password: "Password123!", first_name: "AccMgr 2", last_name: "Test", role: :account_manager },
+  { email: "datamgr1@aqvc.com", password: "Password123!", first_name: "DataMgr",  last_name: "Test", role: :data_manager }
+].freeze
+
 ActiveRecord::Base.transaction do
-  admin_role = upsert_role(id: ADMIN_ROLE_ID, name: "Admin", normalized_name: "ADMIN")
-  account_manager_role = upsert_role(
-    id: ACCOUNT_MANAGER_ROLE_ID,
-    name: "AccountManager",
-    normalized_name: "ACCOUNTMANAGER"
-  )
-  data_manager_role = upsert_role(
-    id: DATA_MANAGER_ROLE_ID,
-    name: "DataManager",
-    normalized_name: "DATAMANAGER"
-  )
+  admin_user = nil
 
-  admin = upsert_user(
-    id: ADMIN_USER_ID,
-    email: "admin@aqvc.com",
-    password: ADMIN_PASSWORD,
-    first_name: "Admin",
-    last_name: "Test",
-    created_by_id: ADMIN_USER_ID
-  )
+  SEED_USERS.each do |attrs|
+    user = User.find_or_initialize_by(email: attrs[:email])
+    user.user_name              = attrs[:email]
+    user.first_name             = attrs[:first_name]
+    user.last_name              = attrs[:last_name]
+    user.email_confirmed        = true
+    user.password               = attrs[:password]
+    user.password_confirmation  = attrs[:password]
+    user.security_stamp       ||= SecureRandom.uuid
+    user.concurrency_stamp    ||= SecureRandom.uuid
+    user.access_failed_count  ||= 0
+    user.lockout_enabled        = true  if user.lockout_enabled.nil?
+    user.phone_number_confirmed = false if user.phone_number_confirmed.nil?
+    user.two_factor_enabled     = false if user.two_factor_enabled.nil?
 
-  accmgr1 = upsert_user(
-    id: ACCOUNT_MANAGER_1_USER_ID,
-    email: "accmgr1@aqvc.com",
-    password: DEFAULT_PASSWORD,
-    first_name: "AccMgr 1",
-    last_name: "Test",
-    created_by_id: ADMIN_USER_ID
-  )
+    # First user (admin) is self-referencing; others reference admin
+    if admin_user.nil?
+      user.save!(validate: false)
+      user.update_column(:created_by_id, user.id)
+      admin_user = user
+    else
+      user.created_by_id ||= admin_user.id
+      user.save!
+    end
 
-  accmgr2 = upsert_user(
-    id: ACCOUNT_MANAGER_2_USER_ID,
-    email: "accmgr2@aqvc.com",
-    password: DEFAULT_PASSWORD,
-    first_name: "AccMgr 2",
-    last_name: "Test",
-    created_by_id: ADMIN_USER_ID
-  )
-
-  datamgr1 = upsert_user(
-    id: DATA_MANAGER_1_USER_ID,
-    email: "datamgr1@aqvc.com",
-    password: DEFAULT_PASSWORD,
-    first_name: "DataMgr",
-    last_name: "Test",
-    created_by_id: ADMIN_USER_ID
-  )
-
-  ensure_user_role(user_id: admin.id, role_id: admin_role.id)
-  ensure_user_role(user_id: accmgr1.id, role_id: account_manager_role.id)
-  ensure_user_role(user_id: accmgr2.id, role_id: account_manager_role.id)
-  ensure_user_role(user_id: datamgr1.id, role_id: data_manager_role.id)
+    user.add_role(attrs[:role]) unless user.has_role?(attrs[:role])
+  end
 end
 
-puts "Seed complete: roles/users/user_roles ensured."
+puts "Seed complete: #{User.count} users, #{Role.count} roles."

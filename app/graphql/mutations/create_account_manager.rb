@@ -21,11 +21,7 @@ module Mutations
         raise_execution_error(code: "Users.EmailNotUnique", detail: "The provided email is not unique", status: 409, type: "https://tools.ietf.org/html/rfc7231#section-6.5.8")
       end
 
-      role = Role.find_by(name: "AccountManager") || Role.find_by(normalized_name: "ACCOUNTMANAGER")
-      raise_execution_error(code: "Users.RegistrationFailed", detail: "The user registration failed", status: 400, type: "https://tools.ietf.org/html/rfc7231#section-6.5.1") if role.nil?
-
-      user_id = nil
-
+      user = nil
       ActiveRecord::Base.transaction do
         user = User.create!(
           email: normalized_email,
@@ -44,12 +40,10 @@ module Mutations
           created_by_id: current_user_id
         )
 
-        UserRole.create!(user_id: user.id, role_id: role.id)
-
-        user_id = user.id
+        user.add_role(:account_manager)
       end
 
-      { id: user_id }
+      { id: user.id }
     rescue ActiveRecord::RecordInvalid => e
       raise_execution_error(code: "Users.RegistrationFailed", detail: e.record.errors.full_messages.join(", ").presence || "The user registration failed", status: 400, type: "https://tools.ietf.org/html/rfc7231#section-6.5.1")
     rescue GraphQL::ExecutionError

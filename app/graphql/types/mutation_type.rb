@@ -3,6 +3,11 @@ module Types
     field :login, mutation: Mutations::Login
     field :logout, mutation: Mutations::Logout
     field :create_account_manager, mutation: Mutations::CreateAccountManager
+    field :send_invitation, mutation: Mutations::SendInvitation
+    field :accept_invitation, mutation: Mutations::AcceptInvitation
+    field :resend_invitation, mutation: Mutations::ResendInvitation
+    field :update_user, mutation: Mutations::UpdateUser
+    field :delete_user, mutation: Mutations::DeleteUser
     field :create_investor, mutation: Mutations::CreateInvestor
     field :update_investor, mutation: Mutations::UpdateInvestor
     field :delete_investor, mutation: Mutations::DeleteInvestor

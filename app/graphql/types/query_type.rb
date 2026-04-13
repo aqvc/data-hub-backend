@@ -10,6 +10,10 @@ module Types
     field :user, GraphQL::Types::JSON, null: false do
       argument :id, ID, required: true
     end
+    field :team_users, GraphQL::Types::JSON, null: false
+    field :invitation_by_token, GraphQL::Types::JSON, null: true do
+      argument :token, String, required: true
+    end
     field :investor_search, GraphQL::Types::JSON, null: false do
       argument :page, Integer, required: false
       argument :limit, Integer, required: false
@@ -60,6 +64,39 @@ module Types
     field :proof_ledger_comments, GraphQL::Types::JSON, null: false do
       argument :filter, Types::RelationFilterInputType, required: true
       argument :field_id, String, required: false
+    end
+
+    def team_users
+      authorize_roles!(*GraphqlSupport::AuthHelpers::ALL_ROLES)
+
+      users = User.includes(:roles).order(:first_name, :last_name)
+      {
+        "data" => users.map do |user|
+          deep_camelize(
+            id: user.id,
+            email: user.email,
+            first_name: user.first_name,
+            last_name: user.last_name,
+            roles: user.role_names,
+            invitation_accepted_at: user.invitation_accepted_at,
+            invitation_sent_at: user.invitation_sent_at,
+            created_at: user.created_at,
+            status: user_status(user)
+          )
+        end
+      }
+    end
+
+    def invitation_by_token(token:)
+      user = User.find_by_invitation_token(token, true)
+      return nil if user.nil?
+
+      deep_camelize(
+        email: user.email,
+        first_name: user.first_name,
+        last_name: user.last_name,
+        invitation_valid: true
+      )
     end
 
     def analytics_database_insights_overview
@@ -353,6 +390,23 @@ module Types
     end
 
     private
+
+    def user_status(user)
+      if user.invitation_accepted_at.present?
+        "active"
+      elsif user.invitation_sent_at.present?
+        invitation_still_valid?(user) ? "invited" : "expired"
+      else
+        "active"
+      end
+    end
+
+    def invitation_still_valid?(user)
+      return false if user.invitation_sent_at.nil?
+
+      invite_for = User.invite_for
+      invite_for.zero? || user.invitation_sent_at.utc >= invite_for.ago
+    end
 
     def investors_service
       @investors_service ||= GraphqlApi::InvestorsService.new

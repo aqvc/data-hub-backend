@@ -2,7 +2,7 @@ module Api
   class InvestorsController < ApplicationController
     include JwtAuthentication
 
-    ALL_ROLES = %w[Admin DataManager AccountManager].freeze
+    ALL_ROLES = GraphqlSupport::AuthHelpers::ALL_ROLES
 
     before_action only: [:search, :create, :show, :update, :qualify, :export_by_filters, :export_by_ids] do
       authenticate_with_roles!(*ALL_ROLES)

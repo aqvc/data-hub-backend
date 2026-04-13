@@ -1,7 +1,7 @@
 module GraphqlSupport
   module AuthHelpers
-    ALL_ROLES = %w[Admin DataManager AccountManager].freeze
-    ADMIN_ROLE = "Admin".freeze
+    ALL_ROLES = %w[admin data_manager account_manager member].freeze
+    ADMIN_ROLE = "admin".freeze
 
     private
 
@@ -14,7 +14,7 @@ module GraphqlSupport
     end
 
     def session_roles
-      controller.session[:current_user_roles].presence || current_user&.roles&.pluck(:name) || []
+      controller.session[:current_user_roles].presence || current_user&.role_names || []
     end
 
     def authorize_roles!(*allowed_roles)

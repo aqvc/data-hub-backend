@@ -2,7 +2,7 @@ module Api
   class RegionsController < ApplicationController
     include JwtAuthentication
 
-    ALL_ROLES = %w[Admin DataManager AccountManager].freeze
+    ALL_ROLES = GraphqlSupport::AuthHelpers::ALL_ROLES
 
     before_action only: [:index] do
       authenticate_with_roles!(*ALL_ROLES)

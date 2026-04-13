@@ -10,6 +10,8 @@ gem "rails", "~> 7.0.4"
 gem "pg", "~> 1.5"
 gem "jwt", "~> 2.8"
 gem "devise", "~> 4.9"
+gem "devise_invitable", "~> 2.0"
+gem "rolify", "~> 6.0"
 gem "graphql", "~> 2.3.4"
 gem "roo", "~> 2.10"
 gem "acts_as_paranoid", "~> 0.9"
@@ -40,6 +42,7 @@ gem "bootsnap", require: false
 
 # Use Rack CORS for handling Cross-Origin Resource Sharing (CORS), making cross-origin AJAX possible
 gem "rack-cors"
+gem "postmark-rails", "~> 0.22"
 
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
@@ -50,4 +53,5 @@ end
 group :development do
   # Speed up commands on slow machines / big apps [https://github.com/rails/spring]
   # gem "spring"
+  gem "letter_opener", "~> 1.10"
 end

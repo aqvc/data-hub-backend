@@ -23,7 +23,7 @@ module JwtAuthentication
       return false
     end
 
-    roles = session[:current_user_roles].presence || current_user.roles.pluck(:name)
+    roles = session[:current_user_roles].presence || current_user.role_names
 
     return true if (roles & allowed_roles).any?
 
