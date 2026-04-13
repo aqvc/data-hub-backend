@@ -1,0 +1,13 @@
+<% frontend_host = ENV.fetch("FRONTEND_URL", "http://localhost:3101") %>
+<% invitation_url = "#{frontend_host}/auth/accept-invitation?invitation_token=#{@token}" %>
+You're invited to join AQVC Hub!
+
+Hi <%= @resource.first_name %>,
+
+<% if @resource.invited_by %><%= @resource.invited_by.first_name %> <%= @resource.invited_by.last_name %> has invited you to join AQVC Hub.<% else %>You've been invited to join AQVC Hub.<% end %> Visit the link below to set up your account:
+
+<%= invitation_url %>
+
+This invitation will expire in <%= distance_of_time_in_words(User.invite_for) %>. If you didn't expect this invitation, you can safely ignore this email.
+
+<%= Date.current.year %> AQVC Hub. All rights reserved.

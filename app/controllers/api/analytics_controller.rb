@@ -2,7 +2,7 @@ module Api
   class AnalyticsController < ApplicationController
     include JwtAuthentication
 
-    ALL_ROLES = %w[Admin DataManager AccountManager].freeze
+    ALL_ROLES = GraphqlSupport::AuthHelpers::ALL_ROLES
 
     before_action do
       authenticate_with_roles!(*ALL_ROLES)
@@ -108,8 +108,7 @@ module Api
     end
 
     def team
-      role_ids = Role.where(name: ALL_ROLES).pluck(:id)
-      users = User.joins(:user_roles).where(user_roles: { role_id: role_ids }).distinct
+      users = User.with_any_role(*ALL_ROLES)
       start_date = 6.months.ago.to_date
 
       response = users.map do |user|

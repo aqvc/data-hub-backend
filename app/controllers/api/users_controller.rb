@@ -2,8 +2,8 @@ module Api
   class UsersController < ApplicationController
     include JwtAuthentication
 
-    ALL_ROLES = %w[Admin DataManager AccountManager].freeze
-    ADMIN_ROLE = "Admin".freeze
+    ALL_ROLES = GraphqlSupport::AuthHelpers::ALL_ROLES
+    ADMIN_ROLE = GraphqlSupport::AuthHelpers::ADMIN_ROLE
     DEFAULT_PASSWORD = "Password123!".freeze
 
     before_action only: [:logout, :show] do
@@ -39,7 +39,7 @@ module Api
       email = params[:email].to_s
       password = params[:password].to_s
 
-      user = User.includes(:roles).find_by(email: email)
+      user = User.find_by(email: email)
       if user.nil?
         return render_problem(
           code: "Users.NotFoundByEmail",
@@ -58,7 +58,7 @@ module Api
         )
       end
 
-      roles = user.roles.pluck(:name)
+      roles = user.role_names
       reset_session
       session[:current_user_id] = user.id
       session[:current_user_roles] = roles
@@ -87,7 +87,7 @@ module Api
       first_name = params[:firstName].to_s
       last_name = params[:lastName].to_s
 
-      if email.blank? || !(email.match?(URI::MailTo::EMAIL_REGEXP))
+      if email.blank? || !email.match?(URI::MailTo::EMAIL_REGEXP)
         return render_problem(
           code: "Users.RegistrationFailed",
           detail: "Email must be a valid email address.",
@@ -105,19 +105,7 @@ module Api
         )
       end
 
-      role = Role.find_by(name: "AccountManager") || Role.find_by(normalized_name: "ACCOUNTMANAGER")
-      if role.nil?
-        return render_problem(
-          code: "Users.RegistrationFailed",
-          detail: "The user registration failed",
-          type: "https://tools.ietf.org/html/rfc7231#section-6.5.1",
-          status: 400
-        )
-      end
-
-      user_id = nil
-      creator_id = current_user_id
-
+      user = nil
       ActiveRecord::Base.transaction do
         user = User.create!(
           email: email,
@@ -133,15 +121,13 @@ module Api
           phone_number_confirmed: false,
           two_factor_enabled: false,
           lockout_enabled: true,
-          created_by_id: creator_id
+          created_by_id: current_user_id
         )
 
-        UserRole.create!(user_id: user.id, role_id: role.id)
-
-        user_id = user.id
+        user.add_role(:account_manager)
       end
 
-      render json: user_id, status: :ok
+      render json: user.id, status: :ok
     rescue ActiveRecord::RecordInvalid => e
       render_problem(
         code: "Users.RegistrationFailed",

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_04_12_000000) do
+ActiveRecord::Schema[7.0].define(version: 2026_04_13_100000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "hstore"
   enable_extension "pgcrypto"
@@ -739,7 +739,14 @@ ActiveRecord::Schema[7.0].define(version: 2026_04_12_000000) do
     t.string "name"
     t.string "normalized_name"
     t.text "concurrency_stamp"
+    t.string "resource_type"
+    t.uuid "resource_id"
+    t.datetime "created_at", default: -> { "CURRENT_TIMESTAMP" }, null: false
+    t.datetime "updated_at", default: -> { "CURRENT_TIMESTAMP" }, null: false
+    t.index ["name", "resource_type", "resource_id"], name: "index_roles_on_name_and_resource_type_and_resource_id"
+    t.index ["name"], name: "index_roles_on_name"
     t.index ["normalized_name"], name: "index_roles_on_normalized_name", unique: true
+    t.index ["resource_type", "resource_id"], name: "index_roles_on_resource"
   end
 
   create_table "similar_fund_and_company_iips", id: false, force: :cascade do |t|
@@ -785,6 +792,7 @@ ActiveRecord::Schema[7.0].define(version: 2026_04_12_000000) do
   create_table "user_roles", id: false, force: :cascade do |t|
     t.uuid "user_id", null: false
     t.uuid "role_id", null: false
+    t.index ["user_id", "role_id"], name: "index_user_roles_on_user_id_and_role_id"
   end
 
   create_table "user_tokens", id: false, force: :cascade do |t|
@@ -813,10 +821,21 @@ ActiveRecord::Schema[7.0].define(version: 2026_04_12_000000) do
     t.datetime "lockout_end"
     t.boolean "lockout_enabled", null: false
     t.integer "access_failed_count", null: false
-    t.string "encrypted_password", default: "", null: false
+    t.string "encrypted_password"
     t.string "first_name"
     t.string "last_name"
+    t.string "invitation_token"
+    t.datetime "invitation_created_at"
+    t.datetime "invitation_sent_at"
+    t.datetime "invitation_accepted_at"
+    t.integer "invitation_limit"
+    t.string "invited_by_type"
+    t.uuid "invited_by_id"
+    t.integer "invitations_count", default: 0
     t.index ["email"], name: "index_users_on_email", unique: true
+    t.index ["invitation_token"], name: "index_users_on_invitation_token", unique: true
+    t.index ["invited_by_id"], name: "index_users_on_invited_by_id"
+    t.index ["invited_by_type", "invited_by_id"], name: "index_users_on_invited_by"
     t.index ["normalized_email"], name: "index_users_on_normalized_email", unique: true
   end
 

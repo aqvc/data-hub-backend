@@ -7,4 +7,9 @@ Devise.setup do |config|
   config.skip_session_storage = [:http_auth, :params_auth]
   config.stretches = Rails.env.test? ? 1 : 12
   config.navigational_formats = []
+
+  # ==> Configuration for :invitable
+  config.invite_for = 7.days
+  config.invite_key = { email: URI::MailTo::EMAIL_REGEXP }
+  config.allow_insecure_sign_in_after_accept = false
 end

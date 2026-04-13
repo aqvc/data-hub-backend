@@ -4,17 +4,6 @@ class GraphqlApiTest < ActionDispatch::IntegrationTest
   setup do
     @now = Time.current.utc.change(usec: 0)
 
-    @admin_role = Role.create!(
-      name: "Admin",
-      normalized_name: "ADMIN",
-      concurrency_stamp: SecureRandom.uuid
-    )
-    @account_manager_role = Role.create!(
-      name: "AccountManager",
-      normalized_name: "ACCOUNTMANAGER",
-      concurrency_stamp: SecureRandom.uuid
-    )
-
     @admin = User.new(
       created_by_id: "seed-user",
       user_name: "admin@example.com",
@@ -33,8 +22,7 @@ class GraphqlApiTest < ActionDispatch::IntegrationTest
     )
     @admin.save!
     @admin.update_column(:created_by_id, @admin.id)
-
-    UserRole.create!(user_id: @admin.id, role_id: @admin_role.id)
+    @admin.add_role(:admin)
 
     @region = Region.create!(
       name: "Asia",
