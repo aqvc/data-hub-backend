@@ -23,7 +23,14 @@ module HubBackendRails
     # Middleware like session, flash, cookies can be added back manually.
     # Skip views, helpers and assets when generating a new resource.
     config.api_only = true
-    config.session_store :cookie_store, key: "_hub_backend_rails_session"
+
+    cookie_domain = ENV["SESSION_COOKIE_DOMAIN"] # e.g. ".datahub.aqvc.com"
+    session_options = { key: "_hub_backend_rails_session" }
+    session_options[:domain] = cookie_domain if cookie_domain.present?
+    session_options[:secure] = true if Rails.env.production?
+    session_options[:same_site] = Rails.env.production? ? :none : :lax
+
+    config.session_store :cookie_store, **session_options
     config.middleware.use ActionDispatch::Cookies
     config.middleware.use ActionDispatch::Session::CookieStore, config.session_options
   end
