@@ -87,8 +87,9 @@ ActiveRecord::Base.transaction do
 
     # First user (admin) is self-referencing; others reference admin
     if admin_user.nil?
+      user.id ||= SecureRandom.uuid
+      user.created_by_id = user.id
       user.save!(validate: false)
-      user.update_column(:created_by_id, user.id)
       admin_user = user
     else
       user.created_by_id ||= admin_user.id
