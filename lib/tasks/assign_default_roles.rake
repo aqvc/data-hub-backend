@@ -2,7 +2,7 @@ namespace :users do
   desc "Assign default 'member' role to all existing users without any role"
   task assign_default_roles: :environment do
     # Ensure all roles exist
-    role_names = %w[admin account_manager data_manager member]
+    role_names = %w[superadmin admin account_manager data_manager member]
     role_names.each do |role_name|
       Role.find_or_create_by!(name: role_name)
     end

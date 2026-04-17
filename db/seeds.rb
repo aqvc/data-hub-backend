@@ -48,7 +48,7 @@ puts "Currency seed complete: #{Currency.count} currencies ensured."
 
 # ── Roles ────────────────────────────────────────────────────────────
 
-ROLE_NAMES = %w[admin account_manager data_manager member].freeze
+ROLE_NAMES = %w[superadmin admin account_manager data_manager member].freeze
 
 ROLE_NAMES.each do |name|
   Role.find_or_create_by!(name: name) do |role|

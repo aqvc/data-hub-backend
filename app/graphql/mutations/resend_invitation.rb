@@ -5,7 +5,7 @@ module Mutations
     field :success, Boolean, null: false
 
     def resolve(user_id:)
-      authorize_roles!(GraphqlSupport::AuthHelpers::ADMIN_ROLE)
+      authorize_roles!(*GraphqlSupport::AuthHelpers::ADMIN_ROLES)
 
       user = User.find_by(id: user_id)
       raise_not_found("Users.NotFound", user_id, "user") if user.nil?

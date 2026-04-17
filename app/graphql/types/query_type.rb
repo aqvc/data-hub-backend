@@ -67,7 +67,7 @@ module Types
     end
 
     def team_users
-      authorize_roles!(*GraphqlSupport::AuthHelpers::ALL_ROLES)
+      authorize_roles!(*GraphqlSupport::AuthHelpers::ADMIN_ROLES)
 
       users = User.includes(:roles).order(:first_name, :last_name)
       {
@@ -110,7 +110,7 @@ module Types
     end
 
     def analytics_team
-      authorize_roles!(*GraphqlSupport::AuthHelpers::ALL_ROLES)
+      authorize_roles!(GraphqlSupport::AuthHelpers::SUPERADMIN_ROLE)
       GraphqlApi::AnalyticsTeamService.new.call
     end
 

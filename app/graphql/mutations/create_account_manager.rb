@@ -10,7 +10,7 @@ module Mutations
     field :id, ID, null: false
 
     def resolve(email:, password: nil, first_name: nil, last_name: nil)
-      authorize_roles!(GraphqlSupport::AuthHelpers::ADMIN_ROLE)
+      authorize_roles!(*GraphqlSupport::AuthHelpers::ADMIN_ROLES)
 
       normalized_email = email.to_s.strip
       unless normalized_email.match?(URI::MailTo::EMAIL_REGEXP)

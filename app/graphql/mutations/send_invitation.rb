@@ -11,7 +11,7 @@ module Mutations
     field :email, String, null: false
 
     def resolve(email:, first_name:, last_name:, role_name:)
-      authorize_roles!(GraphqlSupport::AuthHelpers::ADMIN_ROLE)
+      authorize_roles!(*GraphqlSupport::AuthHelpers::ADMIN_ROLES)
 
       normalized_email = email.to_s.strip.downcase
       validate_email!(normalized_email)

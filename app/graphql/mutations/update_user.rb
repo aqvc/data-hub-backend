@@ -10,13 +10,17 @@ module Mutations
     field :success, Boolean, null: false
 
     def resolve(id:, first_name: nil, last_name: nil, role_name: nil)
-      authorize_roles!(GraphqlSupport::AuthHelpers::ADMIN_ROLE)
+      authorize_roles!(*GraphqlSupport::AuthHelpers::ADMIN_ROLES)
 
       user = User.find_by(id: id)
       raise_not_found("Users.NotFound", id, "user") if user.nil?
 
       if role_name.present? && !VALID_ROLES.include?(role_name)
         raise_execution_error(code: "Users.InvalidRole", detail: "Role must be one of: #{VALID_ROLES.join(', ')}", status: 400, type: "https://tools.ietf.org/html/rfc7231#section-6.5.1")
+      end
+
+      if target_user_admin_or_above?(user) && !current_user_superadmin?
+        raise_execution_error(code: "Users.Forbidden", detail: "Only superadmins can modify admin users.", status: 403, type: "https://tools.ietf.org/html/rfc7231#section-6.5.3")
       end
 
       ActiveRecord::Base.transaction do

@@ -1,7 +1,9 @@
 module GraphqlSupport
   module AuthHelpers
-    ALL_ROLES = %w[admin data_manager account_manager member].freeze
+    ALL_ROLES = %w[superadmin admin data_manager account_manager member].freeze
+    SUPERADMIN_ROLE = "superadmin".freeze
     ADMIN_ROLE = "admin".freeze
+    ADMIN_ROLES = [SUPERADMIN_ROLE, ADMIN_ROLE].freeze
 
     private
 
@@ -35,6 +37,14 @@ module GraphqlSupport
         status: 403,
         type: "https://tools.ietf.org/html/rfc7231#section-6.5.3"
       )
+    end
+
+    def current_user_superadmin?
+      session_roles.include?(SUPERADMIN_ROLE)
+    end
+
+    def target_user_admin_or_above?(user)
+      (user.role_names & ADMIN_ROLES).any?
     end
 
     def controller
