@@ -38,6 +38,7 @@
 .byebug_history
 config/application.yml
 AGENTS.md
+.claude/
 
 # Elastic Beanstalk Files
 .elasticbeanstalk/*

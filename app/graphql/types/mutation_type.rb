@@ -7,6 +7,7 @@ module Types
     field :accept_invitation, mutation: Mutations::AcceptInvitation
     field :resend_invitation, mutation: Mutations::ResendInvitation
     field :update_user, mutation: Mutations::UpdateUser
+    field :update_profile, mutation: Mutations::UpdateProfile
     field :delete_user, mutation: Mutations::DeleteUser
     field :create_investor, mutation: Mutations::CreateInvestor
     field :update_investor, mutation: Mutations::UpdateInvestor
