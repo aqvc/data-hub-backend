@@ -3,6 +3,7 @@ module Api
     include JwtAuthentication
 
     ALL_ROLES = GraphqlSupport::AuthHelpers::ALL_ROLES
+    EXPORT_RECORD_LIMIT = 2_000
 
     before_action only: [:search, :create, :show, :update, :qualify, :export_by_filters, :export_by_ids] do
       authenticate_with_roles!(*ALL_ROLES)
@@ -69,12 +70,16 @@ module Api
 
     def export_by_filters
       investors = filtered_and_sorted_scope
+      return render_export_limit_exceeded if investor_count(investors) > EXPORT_RECORD_LIMIT
+
       csv_data = build_csv(investors, params[:columns])
       send_data csv_data, filename: "Investors.csv", type: "text/csv"
     end
 
     def export_by_ids
-      selected_ids = Array(params[:selectedIds]).map(&:to_s).reject(&:blank?)
+      selected_ids = Array(params[:selectedIds]).map(&:to_s).reject(&:blank?).uniq
+      return render_export_limit_exceeded if selected_ids.size > EXPORT_RECORD_LIMIT
+
       investors = export_base_scope.where(id: selected_ids)
       csv_data = build_csv(investors, params[:columns])
       send_data csv_data, filename: "Investors.csv", type: "text/csv"
@@ -279,6 +284,19 @@ module Api
                   else "public.investors.name #{sort_direction}, public.investors.id ASC"
                   end
       investors.order(Arel.sql(order_sql))
+    end
+
+    def investor_count(scope)
+      scope.except(:order).reselect("public.investors.id").distinct.count
+    end
+
+    def render_export_limit_exceeded
+      render_problem(
+        code: "Investors.ExportLimitExceeded",
+        detail: "You can export up to #{EXPORT_RECORD_LIMIT} records at a time. Please refine your filters and try again.",
+        type: "https://tools.ietf.org/html/rfc7231#section-6.5.1",
+        status: 422
+      )
     end
 
     def export_base_scope

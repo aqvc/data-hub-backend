@@ -2,6 +2,8 @@ module GraphqlApi
   class InvestorsService
     include GraphqlSupport::PayloadHelpers
 
+    EXPORT_RECORD_LIMIT = 2_000
+
     def search(page:, limit:, filter:, column_filter:, sort:)
 
       page_number = [page.to_i, 1].max
@@ -28,12 +30,15 @@ module GraphqlApi
     def export_by_filters(columns:, filter:, column_filter:, sort:)
       filtered = filtered_scope(base_export_scope, filter: filter, column_filter: column_filter)
       filtered_ids = filtered.except(:order).reselect("public.investors.id").distinct
+      enforce_export_limit!(filtered_ids.count)
       investors = base_export_scope.where(id: filtered_ids).order(Arel.sql(order_sql(sort)))
       build_csv(investors, columns)
     end
 
     def export_by_ids(selected_ids:, columns:)
-      investors = base_export_scope.where(id: Array(selected_ids).map(&:to_s).reject(&:blank?))
+      ids = Array(selected_ids).map(&:to_s).reject(&:blank?).uniq
+      enforce_export_limit!(ids.size)
+      investors = base_export_scope.where(id: ids)
       build_csv(investors, columns)
     end
 
@@ -402,6 +407,21 @@ module GraphqlApi
 
     def base_export_scope
       Investor.all
+    end
+
+    def enforce_export_limit!(count)
+      return if count <= EXPORT_RECORD_LIMIT
+
+      message = "You can export up to #{EXPORT_RECORD_LIMIT} records at a time. Please refine your filters and try again."
+      raise GraphQL::ExecutionError.new(
+        message,
+        extensions: {
+          code: "Investors.ExportLimitExceeded",
+          detail: message,
+          status: 422,
+          type: "https://tools.ietf.org/html/rfc7231#section-6.5.1"
+        }
+      )
     end
 
     def order_sql(sort_items)
