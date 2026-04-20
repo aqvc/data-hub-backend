@@ -9,9 +9,10 @@ min_threads_count = ENV.fetch("RAILS_MIN_THREADS") { max_threads_count }
 threads min_threads_count, max_threads_count
 
 # Specifies the `worker_timeout` threshold that Puma will use to wait before
-# terminating a worker in development environments.
+# terminating a worker.
 #
-worker_timeout 3600 if ENV.fetch("RAILS_ENV", "development") == "development"
+rails_env = ENV.fetch("RAILS_ENV", "development")
+worker_timeout(rails_env == "development" ? 3600 : 300)
 
 # Specifies the `port` that Puma will listen on to receive requests; default is 3000.
 #
