@@ -84,7 +84,7 @@ jobs:
           EOF
 
       - name: Package deployment bundle
-        run: zip -j deploy-bundle.zip Dockerrun.aws.json
+        run: zip -r deploy-bundle.zip Dockerrun.aws.json .platform
 
       - name: Upload bundle to S3 and deploy
         env:
