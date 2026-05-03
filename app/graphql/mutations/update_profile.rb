@@ -22,7 +22,7 @@ module Mutations
     rescue GraphQL::ExecutionError
       raise
     rescue StandardError => e
-      Rails.logger.error("UpdateProfile failed: #{e.class} - #{e.message}")
+      ErrorTracker.error("UpdateProfile failed: #{e.class} - #{e.message}")
       raise_execution_error(code: "Profile.UpdateFailed", detail: "Failed to update profile.", status: 500, type: "https://tools.ietf.org/html/rfc7231#section-6.6.1")
     end
   end

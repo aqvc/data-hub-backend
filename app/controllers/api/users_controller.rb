@@ -65,7 +65,7 @@ module Api
 
       render json: { authenticated: true, userId: user.id, roles: roles }, status: :ok
     rescue StandardError => e
-      Rails.logger.error("UsersController#login failed: #{e.class} - #{e.message}")
+      ErrorTracker.error("UsersController#login failed: #{e.class} - #{e.message}")
       render_problem(
         code: "Users.AuthenticationFailed",
         detail: "The user authentication failed",

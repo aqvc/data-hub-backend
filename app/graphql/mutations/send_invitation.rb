@@ -57,7 +57,7 @@ module Mutations
     rescue GraphQL::ExecutionError
       raise
     rescue StandardError => e
-      Rails.logger.error("SendInvitation failed: #{e.class} - #{e.message}")
+      ErrorTracker.error("SendInvitation failed: #{e.class} - #{e.message}")
       raise_execution_error(code: "Invitations.Failed", detail: "Failed to send invitation.", status: 500, type: "https://tools.ietf.org/html/rfc7231#section-6.6.1")
     end
 
