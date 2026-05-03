@@ -25,27 +25,17 @@ class InvestmentVehicle < ApplicationRecord
   has_many :proof_ledger_comments
   has_many :proof_ledgers
 
-  enum :type, {
-    balance_sheet: "balance_sheet",
-    fund: "fund",
-    other: "other"
-  }, prefix: true
-  enum :fund_status, {
-    closed: "closed",
-    open: "open"
-  }
-  enum :investing_status, {
-    investing: "investing",
-    not_investing: "not_investing"
-  }
-  enum :distribution_waterfall, {
-    american_waterfall: "american_waterfall",
-    european_waterfall: "european_waterfall"
-  }
-  enum :jurisdiction, {
-    kyc: 0,
-    aml: 1,
-    audit_approved: 2
-  }
+  TYPES = %w[balance_sheet fund other].freeze
+  FUND_STATUSES = %w[closed open].freeze
+  INVESTING_STATUSES = %w[investing not_investing].freeze
+  DISTRIBUTION_WATERFALLS = %w[american_waterfall european_waterfall].freeze
+  JURISDICTIONS = %w[kyc aml audit_approved].freeze
+
+  enum :type, TYPES.zip(TYPES).to_h, prefix: true
+  enum :fund_status, FUND_STATUSES.zip(FUND_STATUSES).to_h
+  enum :investing_status, INVESTING_STATUSES.zip(INVESTING_STATUSES).to_h
+  enum :distribution_waterfall, DISTRIBUTION_WATERFALLS.zip(DISTRIBUTION_WATERFALLS).to_h
+  # jurisdiction is integer-backed at the DB level; migrate to a string column to align with convention.
+  enum :jurisdiction, JURISDICTIONS.zip(0..).to_h
 
 end
