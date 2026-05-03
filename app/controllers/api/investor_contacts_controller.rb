@@ -45,11 +45,11 @@ module Api
       contact.updated_at_utc = Time.now.utc if contact.respond_to?(:updated_at_utc=)
       ActiveRecord::Base.transaction do
         contact.save!
-        ProofLedgerPersistenceService.persist_from_payload!(
+        ProofLedgerPersistenceService.new(
           proof_points: params[:proofPoints],
           current_user_id: current_user_id,
           fallback_relation: { "investor_contact_id" => contact.id }
-        )
+        ).call
       end
       head :ok
     rescue ActiveRecord::RecordInvalid => e

@@ -32,11 +32,11 @@ module Mutations
     end
 
     def persist_proof_points!(proof_points, fallback_relation)
-      ProofLedgerPersistenceService.persist_from_payload!(
+      ProofLedgerPersistenceService.new(
         proof_points: proof_points,
         current_user_id: current_user_id,
         fallback_relation: fallback_relation
-      )
+      ).call
     end
   end
 end
