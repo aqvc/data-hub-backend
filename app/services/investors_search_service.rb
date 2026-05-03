@@ -22,6 +22,9 @@ class InvestorsSearchService
       hasPrev: page > 1,
       data: paginated.map { |investor| InvestorsSerializer.list_item(investor) }
     }
+  rescue StandardError => e
+    ErrorLogger.error("InvestorsSearchService#call: #{e.class} - #{e.message}")
+    raise e
   end
 
   def filtered_and_sorted_scope

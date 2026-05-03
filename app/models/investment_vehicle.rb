@@ -29,13 +29,15 @@ class InvestmentVehicle < ApplicationRecord
   FUND_STATUSES = %w[closed open].freeze
   INVESTING_STATUSES = %w[investing not_investing].freeze
   DISTRIBUTION_WATERFALLS = %w[american_waterfall european_waterfall].freeze
-  JURISDICTIONS = %w[kyc aml audit_approved].freeze
 
   enum :type, TYPES.zip(TYPES).to_h, prefix: true
   enum :fund_status, FUND_STATUSES.zip(FUND_STATUSES).to_h
   enum :investing_status, INVESTING_STATUSES.zip(INVESTING_STATUSES).to_h
   enum :distribution_waterfall, DISTRIBUTION_WATERFALLS.zip(DISTRIBUTION_WATERFALLS).to_h
-  # jurisdiction is integer-backed at the DB level; migrate to a string column to align with convention.
-  enum :jurisdiction, JURISDICTIONS.zip(0..).to_h
+  enum :jurisdiction, {
+    kyc: 0,
+    aml: 1,
+    audit_approved: 2
+  }
 
 end

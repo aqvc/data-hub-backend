@@ -7,6 +7,9 @@ class TeamPerformanceService
 
   def call
     users.map { |user| build_user_summary(user) }
+  rescue StandardError => e
+    ErrorLogger.error("TeamPerformanceService#call: #{e.class} - #{e.message}")
+    raise e
   end
 
   private

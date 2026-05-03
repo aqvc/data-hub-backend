@@ -20,7 +20,7 @@ module Mutations
     rescue GraphQL::ExecutionError
       raise
     rescue StandardError => e
-      ErrorTracker.error("ResendInvitation failed: #{e.class} - #{e.message}")
+      ErrorLogger.error("ResendInvitation failed: #{e.class} - #{e.message}")
       raise_execution_error(code: "Invitations.ResendFailed", detail: "Failed to resend invitation.", status: 500, type: "https://tools.ietf.org/html/rfc7231#section-6.6.1")
     end
   end

@@ -24,7 +24,7 @@ module Mutations
     rescue GraphQL::ExecutionError
       raise
     rescue StandardError => e
-      ErrorTracker.error("Mutations::Login failed: #{e.class} - #{e.message}")
+      ErrorLogger.error("Mutations::Login failed: #{e.class} - #{e.message}")
       raise_execution_error(code: "Users.AuthenticationFailed", detail: "The user authentication failed", status: 400, type: "https://tools.ietf.org/html/rfc7231#section-6.5.1")
     end
   end

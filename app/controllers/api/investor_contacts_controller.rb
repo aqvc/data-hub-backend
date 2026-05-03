@@ -72,7 +72,7 @@ module Api
     private
 
     def current_user_id
-      current_user_claims[JwtTokenService::NAME_ID_CLAIM]
+      current_user_claims[JwtTokenService::NAME_ID_CLAIM]&.to_i
     end
 
     def render_not_found(code, id)

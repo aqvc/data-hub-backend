@@ -16,6 +16,9 @@ class InvestorsCsvExportService
         csv << columns.map { |col| value_for(investor, col) }
       end
     end
+  rescue StandardError => e
+    ErrorLogger.error("InvestorsCsvExportService#call: #{e.class} - #{e.message}")
+    raise e
   end
 
   private

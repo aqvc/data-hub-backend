@@ -25,6 +25,9 @@ class ProofLedgerPersistenceService
     attrs["proof_type"] = attrs["proof_type"].presence || "manual"
 
     ProofLedger.create!(build_attrs(attrs))
+  rescue StandardError => e
+    ErrorLogger.error("ProofLedgerPersistenceService#persist: #{e.class} - #{e.message}")
+    raise e
   end
 
   def build_attrs(attrs)

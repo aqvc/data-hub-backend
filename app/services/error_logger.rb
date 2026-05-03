@@ -1,4 +1,4 @@
-module ErrorTracker
+module ErrorLogger
   def self.error(message)
     if defined?(Rollbar)
       Rollbar.error(message)

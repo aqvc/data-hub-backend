@@ -6,6 +6,9 @@ class DatabaseInsightsOverviewService
       kpi_stats: kpi_stats,
       activity_timeline: activity_timeline
     }
+  rescue StandardError => e
+    ErrorLogger.error("DatabaseInsightsOverviewService#call: #{e.class} - #{e.message}")
+    raise e
   end
 
   private

@@ -9,6 +9,9 @@ class DatabaseInsightsDistributionsService
       by_region: to_chart_data(counts[:by_region]),
       by_maturity: to_chart_data(counts[:by_maturity])
     }
+  rescue StandardError => e
+    ErrorLogger.error("DatabaseInsightsDistributionsService#call: #{e.class} - #{e.message}")
+    raise e
   end
 
   private
