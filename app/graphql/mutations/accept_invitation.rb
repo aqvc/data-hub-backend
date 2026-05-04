@@ -43,7 +43,7 @@ module Mutations
     rescue GraphQL::ExecutionError
       raise
     rescue StandardError => e
-      Rails.logger.error("AcceptInvitation failed: #{e.class} - #{e.message}")
+      ErrorLogger.error("AcceptInvitation failed: #{e.class} - #{e.message}")
       raise_execution_error(code: "Invitations.AcceptFailed", detail: "Failed to accept invitation.", status: 500, type: "https://tools.ietf.org/html/rfc7231#section-6.6.1")
     end
   end

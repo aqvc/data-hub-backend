@@ -14,15 +14,11 @@ class IdealInvestorProfile < ApplicationRecord
   has_many :ideal_investor_profile_region_focus, class_name: "IdealInvestorProfileRegionFocu", foreign_key: :ideal_investor_profile_id
   has_many :similar_fund_and_company_iips, class_name: "SimilarFundAndCompanyIip", foreign_key: :ideal_investor_profile_id
 
-  enum :iip_status, {
-    active: "active",
-    active_in_use: "active_in_use",
-    archived: "archived"
-  }
-  enum :targeting_approach, {
-    inbound: "inbound",
-    outbound: "outbound"
-  }
+  IIP_STATUSES = %w[active active_in_use archived].freeze
+  TARGETING_APPROACHES = %w[inbound outbound].freeze
+
+  enum :iip_status, IIP_STATUSES.zip(IIP_STATUSES).to_h
+  enum :targeting_approach, TARGETING_APPROACHES.zip(TARGETING_APPROACHES).to_h
 
   ASSET_CLASS_VALUES = %w[
     agriculture art_and_antiques buyout crypto debt_general debt_special_situations

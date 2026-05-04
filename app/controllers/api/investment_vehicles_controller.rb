@@ -49,11 +49,11 @@ module Api
       vehicle.updated_at_utc = Time.now.utc if vehicle.respond_to?(:updated_at_utc=)
       ActiveRecord::Base.transaction do
         vehicle.save!
-        ProofLedgerPersistenceService.persist_from_payload!(
+        ProofLedgerPersistenceService.new(
           proof_points: params[:proofPoints],
           current_user_id: current_user_id,
           fallback_relation: { "investment_vehicle_id" => vehicle.id }
-        )
+        ).call
       end
       head :ok
     rescue ActiveRecord::RecordInvalid => e
@@ -68,7 +68,7 @@ module Api
     private
 
     def current_user_id
-      current_user_claims[JwtTokenService::NAME_ID_CLAIM]
+      current_user_claims[JwtTokenService::NAME_ID_CLAIM]&.to_i
     end
 
     def render_not_found(code, id)

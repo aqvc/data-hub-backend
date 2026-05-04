@@ -7,21 +7,20 @@ class Engagement < ApplicationRecord
   belongs_to :created_by, class_name: "User", foreign_key: :created_by_id
   belongs_to :updated_by, class_name: "User", foreign_key: :updated_by_id, optional: true
 
-  enum :type, {
-    attended_event: "attended_event",
-    meeting_scheduled: "meeting_scheduled",
-    message_reply: "message_reply",
-    opened_email: "opened_email",
-    replied_to_email: "replied_to_email",
-    soft_commitment_clicked: "soft_commitment_clicked",
-    soft_commitment_saved: "soft_commitment_saved",
-    viewed_profile: "viewed_profile"
-  }, prefix: true
-  enum :status, {
-    cancelled: "cancelled",
-    completed: "completed",
-    in_progress: "in_progress",
-    pending: "pending"
-  }, prefix: true
+  TYPES = %w[
+    attended_event
+    meeting_scheduled
+    message_reply
+    opened_email
+    replied_to_email
+    soft_commitment_clicked
+    soft_commitment_saved
+    viewed_profile
+  ].freeze
+
+  STATUSES = %w[cancelled completed in_progress pending].freeze
+
+  enum :type, TYPES.zip(TYPES).to_h, prefix: true
+  enum :status, STATUSES.zip(STATUSES).to_h, prefix: true
 
 end

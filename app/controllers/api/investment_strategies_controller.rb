@@ -67,11 +67,11 @@ module Api
         strategy.save!
         replace_region_focuses(strategy, region_ids) if region_ids.is_a?(Array)
         replace_country_focuses(strategy, country_ids) if country_ids.is_a?(Array)
-        ProofLedgerPersistenceService.persist_from_payload!(
+        ProofLedgerPersistenceService.new(
           proof_points: params[:proofPoints],
           current_user_id: current_user_id,
           fallback_relation: { "investment_strategy_id" => strategy.id }
-        )
+        ).call
       end
 
       head :ok
@@ -107,7 +107,7 @@ module Api
     end
 
     def current_user_id
-      current_user_claims[JwtTokenService::NAME_ID_CLAIM]
+      current_user_claims[JwtTokenService::NAME_ID_CLAIM]&.to_i
     end
 
     def render_not_found(code, id)

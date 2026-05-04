@@ -13,7 +13,7 @@ class GraphqlController < ApplicationController
 
     render json: result
   rescue StandardError => e
-    Rails.logger.error("GraphqlController#execute failed: #{e.class} - #{e.message}")
+    ErrorLogger.error("GraphqlController#execute failed: #{e.class} - #{e.message}")
     raise e if Rails.env.development? || Rails.env.test?
 
     render json: {

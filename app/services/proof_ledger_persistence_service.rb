@@ -1,48 +1,66 @@
 class ProofLedgerPersistenceService
-  def self.persist_from_payload!(proof_points:, current_user_id:, fallback_relation: {})
-    return if proof_points.blank?
-
-    points = proof_points.respond_to?(:to_unsafe_h) ? [proof_points.to_unsafe_h] : proof_points
-    points.each do |raw_point|
-      point = raw_point.respond_to?(:to_unsafe_h) ? raw_point.to_unsafe_h : raw_point.to_h
-      attrs = point.transform_keys { |k| k.to_s.underscore }
-      attrs = fallback_relation.merge(attrs)
-
-      next if attrs["field_id"].blank?
-      attrs["proof_type"] = attrs["proof_type"].presence || "manual"
-
-      proof_ledger_attrs = {
-        investor_id: attrs["investor_id"],
-        investment_vehicle_id: attrs["investment_vehicle_id"],
-        investment_strategy_id: attrs["investment_strategy_id"],
-        investor_contact_id: attrs["investor_contact_id"],
-        investment_entity_id: attrs["investment_entity_id"],
-        field_id: attrs["field_id"],
-        proof_type: to_db_enum(attrs["proof_type"]),
-        source_name: attrs["source_name"],
-        reference: attrs["reference"],
-        raw_data_url: attrs["raw_data_url"],
-        data_project_id: attrs["data_project_id"],
-        observed: parse_time(attrs["observed"]),
-        criteria_name: attrs["criteria_name"],
-        criteria_value_old: attrs["criteria_value_old"],
-        criteria_value_new: attrs["criteria_value_new"],
-        proof_text: attrs["proof_text"],
-        certainty_score: attrs["certainty_score"],
-        status: "active",
-        internal_comment: attrs["internal_comment"],
-        version: 0,
-        rational: attrs["rational"],
-        created_by_id: current_user_id,
-        created_at_utc: Time.now.utc
-      }
-      proof_ledger_attrs[:id] = attrs["id"] if attrs["id"].present?
-
-      ProofLedger.create!(proof_ledger_attrs)
-    end
+  def initialize(proof_points:, current_user_id:, fallback_relation: {})
+    @proof_points = proof_points
+    @current_user_id = current_user_id
+    @fallback_relation = fallback_relation
   end
 
-  def self.parse_time(value)
+  def call
+    return if @proof_points.blank?
+
+    points.each { |point| persist(point) }
+  end
+
+  private
+
+  def points
+    raw = @proof_points.respond_to?(:to_unsafe_h) ? [@proof_points.to_unsafe_h] : @proof_points
+    raw.map { |p| p.respond_to?(:to_unsafe_h) ? p.to_unsafe_h : p.to_h }
+  end
+
+  def persist(point)
+    attrs = @fallback_relation.merge(point.transform_keys { |k| k.to_s.underscore })
+
+    return if attrs["field_id"].blank?
+    attrs["proof_type"] = attrs["proof_type"].presence || "manual"
+
+    ProofLedger.create!(build_attrs(attrs))
+  rescue StandardError => e
+    ErrorLogger.error("ProofLedgerPersistenceService#persist: #{e.class} - #{e.message}")
+    raise e
+  end
+
+  def build_attrs(attrs)
+    proof_ledger_attrs = {
+      investor_id: attrs["investor_id"],
+      investment_vehicle_id: attrs["investment_vehicle_id"],
+      investment_strategy_id: attrs["investment_strategy_id"],
+      investor_contact_id: attrs["investor_contact_id"],
+      investment_entity_id: attrs["investment_entity_id"],
+      field_id: attrs["field_id"],
+      proof_type: to_db_enum(attrs["proof_type"]),
+      source_name: attrs["source_name"],
+      reference: attrs["reference"],
+      raw_data_url: attrs["raw_data_url"],
+      data_project_id: attrs["data_project_id"],
+      observed: parse_time(attrs["observed"]),
+      criteria_name: attrs["criteria_name"],
+      criteria_value_old: attrs["criteria_value_old"],
+      criteria_value_new: attrs["criteria_value_new"],
+      proof_text: attrs["proof_text"],
+      certainty_score: attrs["certainty_score"],
+      status: "active",
+      internal_comment: attrs["internal_comment"],
+      version: 0,
+      rational: attrs["rational"],
+      created_by_id: @current_user_id,
+      created_at_utc: Time.now.utc
+    }
+    proof_ledger_attrs[:id] = attrs["id"] if attrs["id"].present?
+    proof_ledger_attrs
+  end
+
+  def parse_time(value)
     return nil if value.blank?
 
     Time.zone.parse(value.to_s)
@@ -51,7 +69,7 @@ class ProofLedgerPersistenceService
   end
 
   # Converts API enum names like AIResearch -> ai_research
-  def self.to_db_enum(value)
+  def to_db_enum(value)
     candidate = value.to_s
     return candidate if candidate.blank?
 
