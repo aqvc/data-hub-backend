@@ -1,10 +1,10 @@
 source "https://rubygems.org"
 git_source(:github) { |repo| "https://github.com/#{repo}.git" }
 
-ruby "3.1.2"
+ruby "3.3.6"
 
 # Bundle edge Rails instead: gem "rails", github: "rails/rails", branch: "main"
-gem "rails", "~> 7.0.4"
+gem "rails", "~> 7.2.0"
 
 # Use PostgreSQL
 gem "pg", "~> 1.5"
@@ -14,10 +14,11 @@ gem "devise_invitable", "~> 2.0"
 gem "rolify", "~> 6.0"
 gem "graphql", "~> 2.3.4"
 gem "roo", "~> 2.10"
+gem "csv"
 gem "acts_as_paranoid", "~> 0.9"
 
 # Use the Puma web server [https://github.com/puma/puma]
-gem "puma", "~> 5.0"
+gem "puma", "~> 6.0"
 
 # Build JSON APIs with ease [https://github.com/rails/jbuilder]
 # gem "jbuilder"

@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 
 # ---- Build stage ----
-FROM ruby:3.1.2-slim AS builder
+FROM ruby:3.3.6-slim AS builder
 
 ENV BUNDLE_WITHOUT="development:test" \
   BUNDLE_DEPLOYMENT="1" \
@@ -28,7 +28,7 @@ COPY . .
 RUN bundle exec bootsnap precompile --gemfile app/ lib/ || true
 
 # ---- Runtime stage ----
-FROM ruby:3.1.2-slim AS runtime
+FROM ruby:3.3.6-slim AS runtime
 
 ENV BUNDLE_WITHOUT="development:test" \
   BUNDLE_DEPLOYMENT="1" \
